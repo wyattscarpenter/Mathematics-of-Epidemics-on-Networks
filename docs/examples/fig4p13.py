@@ -34,7 +34,7 @@ ax2 = plt.axes([0.44,0.45,0.4,0.4])
 for kave, ax in zip((50, 5), (ax1, ax2)):
     tau = 2*gamma/kave
     Isum = scipy.zeros(tcount)
-    
+
     for counter in range(iterations):
         G = nx.fast_gnp_random_graph(N,kave/(N-1.))
         t, S, I, R = EoN.fast_SIR(G, tau, gamma, tmax=tmax, rho=rho)
@@ -42,22 +42,22 @@ for kave, ax in zip((50, 5), (ax1, ax2)):
         I = EoN.subsample(report_times, t, I)
         Isum += I
     ax.plot(report_times, Isum/iterations, color='grey', linewidth=5, alpha=0.3)
-        
+
     S0 = (1-rho)*N
     I0 = rho*N
     R0=0
-    
-    t, S, I, R = EoN.SIR_homogeneous_meanfield(S0, I0, R0, kave, tau, gamma, 
+
+    t, S, I, R = EoN.SIR_homogeneous_meanfield(S0, I0, R0, kave, tau, gamma,
                                             tmax=tmax, tcount=tcount)
     ax.plot(t, I/N, '--')
 
     SI0 = (1-rho)*N*kave*rho
     SS0 = (1-rho)*N*kave*(1-rho)
-    t, S, I, R = EoN.SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, kave, tau, gamma, 
+    t, S, I, R = EoN.SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, kave, tau, gamma,
                                 tmax=tmax, tcount=tcount)
     ax.plot(t, I/N)
-    
-        
+
+
 ax1.set_xlabel('$t$')
 ax1.set_ylabel('Prevalence')
 plt.savefig('fig4p13.png')

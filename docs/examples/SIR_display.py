@@ -1,6 +1,5 @@
 import networkx as nx
 import EoN
-import matplotlib.pyplot as plt
 G = nx.grid_2d_graph(100,100) #each node is (u,v) where 0<=u,v<=99
 #we'll initially infect those near the middle
 initial_infections = [(u,v) for (u,v) in G if 45<u<55 and 45<v<55]

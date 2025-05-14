@@ -18,7 +18,7 @@ pip will download the previous version - see the download_url below.
 from setuptools import setup
 
 setup(name='EoN',
-      packages = ['EoN'], 
+      packages = ['EoN'],
       version='1.2',  #http://semver.org/
       description = 'Epidemics on Networks',
       author = 'Joel C. Miller, Istvan Z. Kiss, and Peter Simon',

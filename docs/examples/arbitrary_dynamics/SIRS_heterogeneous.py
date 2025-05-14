@@ -25,7 +25,7 @@ def transmission_weighting(G, source, target, **kwargs):
     scale = 1
     if G.node[target]['age']<kwargs['age_cutoff']:
         scale *= 1.5
-    if G.node[target]['gender'] is 'F' and G.node[source]['gender'] is 'M':
+    if G.node[target]['gender'] == 'F' and G.node[source]['gender'] == 'M':
         scale *= 1.5
     return scale
 
@@ -37,7 +37,7 @@ def recovery_weighting(G, node, **kwargs):
 
 def return_to_susceptibility_weighting(G, node, **kwargs):
     scale = 1
-    if G.node[node]['gender'] is 'F':
+    if G.node[node]['gender'] == 'F':
         scale *= 0.5
     return scale
 

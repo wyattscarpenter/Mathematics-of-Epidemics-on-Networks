@@ -1,6 +1,5 @@
 import networkx as nx
 import EoN
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import scipy
 import random

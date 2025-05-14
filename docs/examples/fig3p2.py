@@ -18,7 +18,7 @@ This uses the same lumped model as for fig 2.11.
 print("There is a difference between the output here and figure3.2a for the\n",
       "book.  This code uses system 3.26, while the figure in the book\n"
       "includes the triangle correction mentioned following system 3.26.\n\n")
-      
+
 print("The code for the complete graph runs quite slowly.  There are very many equations.")
 
 
@@ -28,7 +28,7 @@ def star(N):
     for node_id in range(1,N):
         G.add_edge(0,node_id)
     return G
-    
+
 
 
 
@@ -44,16 +44,16 @@ def complete_graph_dX(X, t, tau, gamma, N):
     \dot{Y}^N = (N-1)\tau Y^{N-1} - N\gamma Y^N
     Note that X has length N+1
     '''
-    #X[k] is probability of k infections.  
+    #X[k] is probability of k infections.
     dX = []
     dX.append(gamma*X[1])
     for k in range(1,N):
         dX.append((k+1)*gamma*X[k+1]+ (N-k+1)*(k-1)*tau*X[k-1]
                     - ((N-k)*k*tau + k*gamma)*X[k])
     dX.append((N-1)*tau*X[N-1] - N*gamma*X[N])
-    
+
     return scipy.array(dX)
-    
+
 def complete_graph_lumped(N, tau, gamma, I0, tmin, tmax, tcount):
     times = scipy.linspace(tmin, tmax, tcount)
     X0 = scipy.zeros(N+1)  #length N+1 of just 0 entries
@@ -63,8 +63,8 @@ def complete_graph_lumped(N, tau, gamma, I0, tmin, tmax, tcount):
     I = scipy.array([sum(k*Pkt[k] for k in range(len(Pkt))) for Pkt in X])
     S = N-I
     return times, S, I
-    
-    
+
+
 def star_graph_dX(X, t, tau, gamma, N):
     '''this system is given in Proposition 2.4, taking Q=S, T=I
     so f_{SI}(k) = f_{QT}(k) = k*tau
@@ -74,9 +74,9 @@ def star_graph_dX(X, t, tau, gamma, N):
     #    [[central node infected] + [central node susceptible]]
     #X = [Y_1^1, Y_1^2, ..., Y_1^{N}, Y_2^0, Y_2^1, ..., Y_2^{N-1}]
 
-    #Note that in proposition Y^0 is same as Y_2^0 
+    #Note that in proposition Y^0 is same as Y_2^0
     #and Y^N is same as Y_1^N
-    
+
     #Y1[k]: central node infected, & k-1 peripheral nodes infected
     Y1vec = [0]+list(X[0:N])      #for Y_1^k, use Y1vec[k]
     #pad with 0 to make easier calculations Y_1^0=0
@@ -90,12 +90,12 @@ def star_graph_dX(X, t, tau, gamma, N):
     dY2vec = []
     for k in range(1, N):
         #k-1 peripheral nodes infected, central infected
-        dY1vec.append((N-k+1)*tau*Y1vec[k-1] + (k-1)*tau*Y2vec[k-1] 
-                      +k*gamma*Y1vec[k+1] 
+        dY1vec.append((N-k+1)*tau*Y1vec[k-1] + (k-1)*tau*Y2vec[k-1]
+                      +k*gamma*Y1vec[k+1]
                       - ((N-k)*tau + (k-1)*gamma+gamma)*Y1vec[k])
     #now the Y^N equation
     dY1vec.append(tau*Y1vec[N-1] + (N-1)*tau*Y2vec[N-1] - N*gamma*Y1vec[N])
-    
+
     #now the Y^0 equation
     dY2vec.append(gamma*(N-1)*Y1vec[1] + gamma*Y2vec[1]-0)
 
@@ -126,9 +126,9 @@ def star_graph_lumped(N, tau, gamma, I0, tmin, tmax, tcount):
     S = N-I
     return times, S, I
 
-    
-    
- 
+
+
+
 N=100
 I0 = 10
 gamma = 1
@@ -148,15 +148,15 @@ plt.figure(1)
 G = nx.complete_graph(N)
 
 for tau in taus1:
-    
+
     print(tau)
     print('lumped')
     t, S, I = complete_graph_lumped(N, tau, gamma, I0, tmin, tmax, tcount)
     plt.plot(t, I/N, color = 'grey', linewidth = 3)
-    
+
     print('I[-1]', I[-1])
     initial_infecteds=random.sample(range(N), I0)
-    
+
     obs_I = 0*report_times
     for counter in range(iterations):
         if counter%100==0:
@@ -164,7 +164,7 @@ for tau in taus1:
         IC = random.sample(range(N),I0)
         t, S, I = EoN.fast_SIS(G, tau, gamma, initial_infecteds = initial_infecteds, tmax = tmax)
         obs_I += EoN.subsample(report_times, t, I)
-    plt.plot(report_times, obs_I*1./(iterations*N), 'o')    
+    plt.plot(report_times, obs_I*1./(iterations*N), 'o')
     #print(obs_I[-1]/iterations)
     print('individual based')
     t, S, I = EoN.SIS_individual_based_pure_IC(G, tau, gamma, initial_infecteds, tmax=tmax, tcount = tcount)
@@ -188,7 +188,7 @@ for tau in taus2:
     plt.plot(t, I/N, color = 'grey', linewidth = 3)
 
     initial_infecteds=random.sample(range(1,N), I0)#not central node 0
-    
+
     obs_I = 0*report_times
     for counter in range(iterations):
         if counter%100==0:
@@ -197,8 +197,8 @@ for tau in taus2:
         t, S, I = EoN.fast_SIS(G, tau, gamma, initial_infecteds = initial_infecteds, tmax = tmax)
         obs_I += EoN.subsample(report_times, t, I)
     #print(obs_I/iterations)
-    plt.plot(report_times, obs_I*1./(iterations*N), 'o')    
-    
+    plt.plot(report_times, obs_I*1./(iterations*N), 'o')
+
     print('individual based')
     t, S, I = EoN.SIS_individual_based_pure_IC(G, tau, gamma, initial_infecteds, tmax=tmax, tcount = tcount)
     plt.plot(t, I/N, '-.', color = 'k')

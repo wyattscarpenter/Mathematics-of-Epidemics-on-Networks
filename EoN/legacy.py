@@ -1,8 +1,8 @@
 
 
 
-def visualize(G, plot_times, node_history, pos = None, 
-                filetype = 'png', filenamebase = 'tmp', 
+def visualize(G, plot_times, node_history, pos = None,
+                filetype = 'png', filenamebase = 'tmp',
                 colorS = '#009a80', colorI = '#ff2020', colorR = 'gray',
                 show_edges = True, highlightSI = False,
                 plot_args = (), number_by_time = False):
@@ -82,11 +82,11 @@ def visualize(G, plot_times, node_history, pos = None,
         EoN.visualize(G, plot_times, node_history, filenamebase = 'tmpSIR')
         
     '''
-    
+
     if pos is None:
         pos = nx.spring_layout(G)
 
-        
+
     for index, time in enumerate(plot_times):
         plt.clf()
         S = set()
@@ -105,10 +105,10 @@ def visualize(G, plot_times, node_history, pos = None,
                 elif status == 'I':
                     I.add(node)
                 else:  #won't happen in SIS case
-                    R.add(node)    
+                    R.add(node)
 
-        nx.draw(G, pos = pos, node_color = colorS, nodelist = list(S), edgelist = [], *plot_args)            
-        nx.draw(G, pos = pos, node_color = colorI, nodelist = list(I), edgelist = [], *plot_args)            
+        nx.draw(G, pos = pos, node_color = colorS, nodelist = list(S), edgelist = [], *plot_args)
+        nx.draw(G, pos = pos, node_color = colorI, nodelist = list(I), edgelist = [], *plot_args)
         nx.draw(G, pos = pos, node_color = colorR, nodelist = list(R), edgelist = [], *plot_args)
         if show_edges:
             if not highlightSI:
@@ -122,4 +122,4 @@ def visualize(G, plot_times, node_history, pos = None,
             plt.savefig(filenamebase+str(time).replace('.', 'p')+'.'+filetype, bbox_inches='tight')
         else:
             plt.savefig(filenamebase+str(index).replace('.', 'p')+'.'+filetype, bbox_inches='tight')
-                
+

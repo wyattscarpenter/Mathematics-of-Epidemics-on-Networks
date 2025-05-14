@@ -1,8 +1,7 @@
 import networkx as nx
 import EoN
-from collections import defaultdict
 import matplotlib.pyplot as plt
-import scipy 
+import scipy
 
 
 colors = ['#5AB3E6','#FF2000','#009A80','#E69A00', '#CD9AB3', '#0073B3','#F0E442']
@@ -25,7 +24,7 @@ for index, N in enumerate(Ns):
 
     freq = scipy.array(freq)
     m= scipy.array(m)
-    
+
     cum_freq = scipy.cumsum(freq)
     plt.figure(1)
     plt.plot(m/N, 1-cum_freq, color = colors[index])
@@ -48,7 +47,7 @@ for index, N in enumerate(Ns):
 
     freq = scipy.array(freq)
     m= scipy.array(m)
-    
+
     cum_freq = scipy.cumsum(freq)
     plt.figure(2)
     plt.plot(m/N, 1-cum_freq, color = colors[index])

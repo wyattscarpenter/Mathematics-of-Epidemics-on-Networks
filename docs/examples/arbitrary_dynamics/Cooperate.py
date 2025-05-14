@@ -51,11 +51,11 @@ for node in range(initial_size):
     IC[node] = 'II'
 
 
-t, SS, SI, SR, IS, II, IR, RS, RI, RR = EoN.Gillespie_simple_contagion(G, H, J, IC, return_statuses, 
-                                        tmax = float('Inf'))    
+t, SS, SI, SR, IS, II, IR, RS, RI, RR = EoN.Gillespie_simple_contagion(G, H, J, IC, return_statuses,
+                                        tmax = float('Inf'))
 
 plt.semilogy(t, IS+II+IR, '-.', label = 'Infected with disease 1')
-plt.semilogy(t, SI+II+RI, '-.', label = 'Infected with disease 2') 
+plt.semilogy(t, SI+II+RI, '-.', label = 'Infected with disease 2')
 
 plt.legend()
 plt.savefig('Cooperate.png')

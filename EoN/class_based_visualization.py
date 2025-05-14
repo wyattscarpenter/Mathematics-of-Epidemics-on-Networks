@@ -12,11 +12,11 @@ from matplotlib.animation import FuncAnimation
 
 class EoN_Plot(object):
     def __init__(self, timeseries = ['S', 'I', 'R'], timelabel = r'$t$', SIR = True):
-        
+
         self.timeseries = timeseries
 
         timeseries_count = len(self.timeseries)
-        
+
         self.timeseries_axi = [None for ts in timeseries] #plural of axes = axi?
 
         if timeseries_count==0:
@@ -27,7 +27,7 @@ class EoN_Plot(object):
             self.network_axes = self.fig.add_subplot(1, 2, 1)
 
             self.timeseries.reverse()
-            
+
             ax = self.fig.add_subplot(timeseries_count, 2, 2*(timeseries_count))
             self.timeseries_axi[-1] = ax
             ax.set_xlabel(timelabel)
@@ -84,24 +84,24 @@ class EoN_Plot(object):
 
             
         '''
-        
+
         initial_infecteds = [node for node in G.nodes() if initial_status[node]=='I']
 
         if SIR:
             initial_recovereds = [node for node in G.nodes() if initial_status[node]=='R']
-            
-            t, S, I, R = model(G, tau, gamma, initial_infecteds=initial_infecteds, 
+
+            t, S, I, R = model(G, tau, gamma, initial_infecteds=initial_infecteds,
                     initial_recovereds = initial_recovereds, tmin = tmin, tmax=tmax,
                     tcount=tcount, return_full_data=False)
-            
+
         else:
-            t, S, I = model(G, tau, gamma, initial_infecteds=initial_infecteds, 
+            t, S, I = model(G, tau, gamma, initial_infecteds=initial_infecteds,
                     tmin = tmin, tmax=tmax,
                     tcount=tcount, return_full_data=False)
             R=None
 
         self.plot_timeseries(t, S=S, I=I, R=R, colordict=colordict, **kwargs)
-        
+
     def highlight_time(self, t):
         for ax in self.timeseries_axi:
             ax.axvline(x=t, linestyle='--', color='k')
@@ -129,7 +129,7 @@ class EoN_Animation(object):
         self.frame_times = frame_times
 
         self.kwargs = kwargs
-        
+
         if pos is None:
             self.pos = nx.spring_layout(G)
         else:
@@ -139,12 +139,12 @@ class EoN_Animation(object):
             nodelist = list(G.nodes())
             random.shuffle(nodelist)
         self.nodelist=nodelist
-        
+
         self.colordict = colordict
 
         self.timeseries = timeseries
         timeseries_count = len(self.timeseries)
-        
+
         self.timeseries_axi = [None for ts in self.timeseries] #plural of axes = axi?
 
         if timeseries_count==0:
@@ -155,7 +155,7 @@ class EoN_Animation(object):
             self.network_axes = self.fig.add_subplot(1, 2, 1)
 
             self.timeseries.reverse()
-            
+
             ax = self.fig.add_subplot(timeseries_count, 2, 2*(timeseries_count))
             self.timeseries_axi[-1] = ax
             ax.set_xlabel(timelabel)
@@ -199,12 +199,12 @@ class EoN_Animation(object):
 
         self.network_axes.set_xticks([])
         self.network_axes.set_yticks([])
-        
+
         time_markers = [None for ax in self.timeseries_axi]
         self._highlight_time(self.frame_times[0], time_markers)
         return drawn_nodes, drawn_I, time_markers
-        
-    
+
+
     def _animation_update(self, t, drawn_nodes, drawn_I, time_markers):
         status = EoN.get_statuses(self.G, self.node_history, t)
         Inodelist = [node for node in self.nodelist if status[node] == 'I']
@@ -218,22 +218,22 @@ class EoN_Animation(object):
     def _animation_update_saveframe(self, t, drawn_nodes, drawn_I, time_markers, filename_base, filetype):
         self._animation_update(t, drawn_nodes, drawn_I, time_markers)
         plt.savefig(filename_base + str(t).replace('.', 'p') + filetype)
-        
+
 
     def save_animation_frames(self, filename_base = 'tmp', filetype = '.png'):
         drawn_nodes, drawn_I,  time_markers = self._initialize()
         fargs = (drawn_nodes, drawn_I, time_markers, filename_base, filetype)
         ani = FuncAnimation(self.fig, self._animation_update_saveframe, frames = self.frame_times, fargs = fargs, repeat=False)
         plt.show()
-        
+
     def save_animation(self, filename_base = 'tmp', filetype = '.mp4', fps = 5, extra_args = ['-vcodec', 'libx264']):
         drawn_nodes, drawn_I, time_markers = self._initialize()
         fargs = (drawn_nodes, drawn_I, time_markers)
         ani = FuncAnimation(self.fig, self._animation_update, frames = self.frame_times, fargs = fargs, repeat=False)
         ani.save(filename_base+filetype, fps=fps, extra_args=extra_args)
         plt.show()
-        
+
     def _highlight_time(self, t, time_markers):
         for index, ax in enumerate(self.timeseries_axi):
             time_markers[index] = ax.axvline(x=t, linestyle='--', color='k')
-    
+

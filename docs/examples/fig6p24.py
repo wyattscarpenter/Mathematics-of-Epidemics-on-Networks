@@ -1,8 +1,7 @@
 import networkx as nx
 import EoN
-from collections import defaultdict
 import matplotlib.pyplot as plt
-import scipy 
+import scipy
 import random
 
 colors = ['#5AB3E6','#FF2000','#009A80','#E69A00', '#CD9AB3', '#0073B3','#F0E442']
@@ -99,7 +98,7 @@ def process_degree_distribution(Gbig, Gsmall, color, Psi, DPsi, symbol):
 #Erdos Renyi
 Gsmall = nx.fast_gnp_random_graph(Nsmall, 5./(Nsmall-1))
 Gbig = nx.fast_gnp_random_graph(Nbig, 5./(Nbig-1))
-process_degree_distribution(Gbig, Gsmall, colors[0], PsiPoisson, DPsiPoisson, '^') 
+process_degree_distribution(Gbig, Gsmall, colors[0], PsiPoisson, DPsiPoisson, '^')
 
 #Bimodal
 Gsmall = get_G(Nsmall, bimodalPk)

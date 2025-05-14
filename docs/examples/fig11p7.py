@@ -9,7 +9,7 @@ from collections import Counter
 #
 # This code generates a Watts-Newman graph and then finds its degree
 # distribution.  Using this degree distribution it predicts the epidemic
-# dynamics.  
+# dynamics.
 #
 
 N=10**4  #population size
@@ -35,7 +35,7 @@ def get_xmax(t,L):
             break
     #print(L[-index:])
     return t[-index]
- 
+
 def SIR_process(G, degree_prob, tau, gamma, tmax = 10):
     N = G.order()
     plt.figure(2)
@@ -78,9 +78,9 @@ def SIR_process(G, degree_prob, tau, gamma, tmax = 10):
     plt.figure(5)
     plt.plot(t-shift, R, '--')
     #plt.savefig('sw_SIR_epi_N{}_p{}_k{}_tau{}_shifted_R.pdf'.format(N, p, k, tau))
-    
+
 def SIS_process(G, degree_prob, tmax, tau, gamma):
-    N=G.order() 
+    N=G.order()
     plt.figure(5)
     plt.clf()
     plt.figure(6)
@@ -100,9 +100,9 @@ def SIS_process(G, degree_prob, tmax, tau, gamma):
     plt.savefig('sw_SIS_epi_N{}_p{}_k{}_tau{}.pdf'.format(N, p, k, tau))
     plt.figure(6)
     plt.savefig('sw_SIS_epi_N{}_p{}_k{}_tau{}_shifted.pdf'.format(N, p, k, tau))
-    
 
-plt.figure(1)    
+
+plt.figure(1)
 deg_dist_plot = plt.gca()
 SIR_tmaxes=[20]#, 15, 15, 15]#[40, 35, 25, 25]#[10000,100,100,10,10,10,10,10,10,10,10,10]
 ps = [0.01]#, 0.1, 0.5, 1]#[0.2, 0.4, 1, 2]#[0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]

@@ -55,7 +55,7 @@ for k in range(pl_kmin, pl_kmax+1):
 valsum = sum(Pk.values())
 for k in Pk.keys():
     Pk[k] /= valsum
-    
+
 #print sum(k*Pk[k] for k in Pk.keys())
 def generate_sequence(Pk, N):
     while True:
@@ -69,7 +69,7 @@ def generate_sequence(Pk, N):
                     r-=Pk[k]
             sequence.append(k)
         if sum(sequence)%2==0:
-            break        
+            break
     return sequence
 
 graph_function = lambda : nx.configuration_model(generate_sequence(Pk,N))

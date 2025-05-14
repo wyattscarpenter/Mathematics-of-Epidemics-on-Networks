@@ -69,9 +69,9 @@ def __citation__():
               r"    booktitle={Proceedings of the 7th Python in Science Conference (SciPy)}" + "\n" + \
               r"}")
 
-              
 
-#__all__ = 
+
+#__all__ =
 
 class EoNError(Exception):
     r'''
@@ -79,7 +79,7 @@ class EoNError(Exception):
     '''
     pass
 
-def _get_rate_functions_(G, tau, gamma, transmission_weight = None, 
+def _get_rate_functions_(G, tau, gamma, transmission_weight = None,
                         recovery_weight=None):
     r'''
     Arguments : 

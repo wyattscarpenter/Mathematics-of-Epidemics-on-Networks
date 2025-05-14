@@ -14,8 +14,8 @@ Another way to do this is through writing a custom transmission rate
 function into the nonMarkovian SIS code.  I hope to do this at a later time.
 '''
 
-    
-    
+
+
 
 
 t0= 2
@@ -38,7 +38,7 @@ sim = EoN.fast_SIS(G, tau0, gamma, rho=rho, tmax = t0, return_full_data=True)
 
 
 
-#the infected nodes are those that either were infected and never recovered 
+#the infected nodes are those that either were infected and never recovered
 #(which won't be in recovery_time)
 #or have been infected multiple times and their last infection was after
 #their last recovery

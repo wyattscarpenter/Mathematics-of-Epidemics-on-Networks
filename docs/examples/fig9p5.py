@@ -20,20 +20,20 @@ kave=15
 
 def rec_time_fxn_gamma(u, alpha, beta):
     return scipy.random.gamma(alpha,beta)
-    
+
 def rec_time_fxn_fixed(u):
     return 1
 
 def rec_time_fxn_exp(u):
     return random.expovariate(1)
-    
+
 def trans_time_fxn(u, v, tau):
     if tau >0:
         return random.expovariate(tau)
     else:
         return float('Inf')
-        
-    
+
+
 def R0first(tau):
     return (kave-1) * (1- 4/(2+tau)**2)
 def R0second(tau):
@@ -43,9 +43,9 @@ def R0third(tau):
 def R0fourth(tau):
     return (kave-1)*(1-scipy.exp(-tau))
 
-    
+
 G = nx.configuration_model([kave]*N)
-    
+
 taus = scipy.linspace(0,0.35,21)
 
 def do_calcs_and_plot(G, trans_time_fxn, rec_time_fxn, trans_time_args, rec_time_args, R0fxn, symbol):
@@ -60,7 +60,7 @@ def do_calcs_and_plot(G, trans_time_fxn, rec_time_fxn, trans_time_args, rec_time
     plt.plot(taus, As, symbol)
     plt.figure(2)
     plt.plot( R0fxn(taus), As, symbol)
-    
+
 print("first distribution")
 do_calcs_and_plot(G, trans_time_fxn, rec_time_fxn_gamma, (tau,), (2,0.5), R0first, 'o')
 print("second distribution")

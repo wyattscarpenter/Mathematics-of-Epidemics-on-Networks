@@ -28,7 +28,7 @@ report_times = scipy.linspace(0, tmax, tcount)
 for tau, label in zip([0.9*tau_c, tau_c, 1.1*tau_c, 1.5*tau_c],['a', 'b', 'c', 'd']):
     print(str(tau_c)+" "+str(tau))
     plt.clf()
-    
+
     Isum = scipy.zeros(tcount)
     for counter in range(iterations):
         G = nx.configuration_model(deg_dist)
@@ -43,26 +43,26 @@ for tau, label in zip([0.9*tau_c, tau_c, 1.1*tau_c, 1.5*tau_c],['a', 'b', 'c', '
     degree_array[ksmall]=N/2
     Sk0 = degree_array*(1-rho)
     Ik0 = degree_array*rho
-            
+
     t, S, I = EoN.SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmax=tmax,
                                                 tcount=tcount)
     plt.plot(t, I/N, '--')
-    
-    
+
+
     SI0 = ((kbig + ksmall)*N/2.)*(1-rho)*rho
     SS0 = ((kbig+ksmall)*N/2.)*(1-rho)*(1-rho)
     II0 = ((kbig+ksmall)*N/2.)*rho*rho
-    
-    t, S, I = EoN.SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, 
+
+    t, S, I = EoN.SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma,
                                    tmax=tmax, tcount=tcount)
     plt.plot(t, I/N)
     #t, S, I = EoN.SIS_compact_pairwise(Sk0, I0, SI0, SS0, II0, tau, gamma, tmax=tmax, tcount=tcount)
     #plt.plot(t, I/N)
-    
+
     I0 = N*rho
     S0 = N*(1-rho)
     kave = (kbig+ksmall)/2.
-    
+
     t, S, I = EoN.SIS_homogeneous_pairwise(S0, I0, SI0, SS0, kave, tau, gamma, tmax=tmax, tcount=tcount)
     plt.plot(t, I/N, '-.')
     plt.xlabel('$t$')

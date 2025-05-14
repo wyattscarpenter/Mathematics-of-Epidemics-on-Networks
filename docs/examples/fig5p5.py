@@ -2,24 +2,23 @@ import EoN
 import networkx as nx
 import matplotlib.pyplot as plt
 import scipy
-import random
 
-        
+
 
 def sim_and_plot(G, tau, gamma, rho, tmax, tcount, ax):
     t, S, I, R= EoN.fast_SIR(G, tau, gamma, rho = rho, tmax = tmax)
     report_times = scipy.linspace(0, tmax, tcount)
     I = EoN.subsample(report_times, t, I)
     ax.plot(report_times, I/N, color='grey', linewidth=5, alpha=0.3)
-    
-    t, S, I, R = EoN.SIR_heterogeneous_meanfield_from_graph(G, tau, gamma, rho=rho, 
+
+    t, S, I, R = EoN.SIR_heterogeneous_meanfield_from_graph(G, tau, gamma, rho=rho,
                                                     tmax=tmax, tcount=tcount)
-    ax.plot(t, I/N, '--')    
+    ax.plot(t, I/N, '--')
     t, S, I, R = EoN.SIR_compact_pairwise_from_graph(G, tau, gamma, rho=rho,
                                                     tmax=tmax, tcount=tcount)
     ax.plot(t, I/N)
- 
-    t, S, I, R = EoN.SIR_homogeneous_pairwise_from_graph(G, tau, gamma, rho=rho, 
+
+    t, S, I, R = EoN.SIR_homogeneous_pairwise_from_graph(G, tau, gamma, rho=rho,
                                                     tmax=tmax, tcount=tcount)
     ax.plot(t, I/N, '-.')
 

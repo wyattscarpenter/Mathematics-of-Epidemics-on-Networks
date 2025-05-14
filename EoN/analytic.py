@@ -58,7 +58,7 @@ def _initialize_node_status_(G, initial_infecteds, initial_recovereds = None):
     intersection = set(initial_infecteds).intersection(set(initial_recovereds))
     if  intersection:
         raise EoN.EoNError("{} are in both initial_infecteds and initial_recovereds".format(intersection))
-        
+
     status = defaultdict(lambda : 'S')
     for node in initial_infecteds:
         if not G.has_node(node):
@@ -90,7 +90,7 @@ def _count_edge_types_(G, initial_infecteds, initial_recovereds = None, SIR=True
         return SS0, SI0
     else:
         return SS0, SI0, II0
-        
+
 #################################
 #                               #
 #   Degree Distribution stuff   #
@@ -153,11 +153,11 @@ def _get_Nk_and_IC_as_arrays_(G, initial_infecteds = None, initial_recovereds = 
         raise EoN.EoNError("cannot define both initial_recovereds and rho")
     if SIR is False and initial_recovereds is not None:
         raise EoN.EoNError("cannot define initial_recovereds for SIS")
-        
+
     Nk = Counter(dict(G.degree()).values())
     maxk = max(Nk.keys())
     Nk = np.array([Nk[k] for k in range(maxk+1)])
-    
+
     if initial_infecteds is not None:
         status = _initialize_node_status_(G, initial_infecteds, initial_recovereds)
         Sk0 = 0*Nk
@@ -170,20 +170,20 @@ def _get_Nk_and_IC_as_arrays_(G, initial_infecteds = None, initial_recovereds = 
             elif status[node] == 'I':
                 Ik0[k] += 1
             else:# status[node] == 'R'
-                Rk0[k] += 1  
+                Rk0[k] += 1
     else:
         if rho is None:
             rho = 1./G.order()
         Sk0 = (1-rho)*Nk
         Ik0 = rho*Nk
         Rk0 = 0*Nk
-    
+
     if SIR:
         return Nk, Sk0, Ik0, Rk0
     else:
         return Nk, Sk0, Ik0
 
-def _get_NkNl_and_IC_as_arrays_(G, initial_infecteds=None, initial_recovereds = None, 
+def _get_NkNl_and_IC_as_arrays_(G, initial_infecteds=None, initial_recovereds = None,
                                 rho=None, withKs = False, SIR=True):
     r'''
     In some of the differential equations models, we need to know how
@@ -244,7 +244,7 @@ def _get_NkNl_and_IC_as_arrays_(G, initial_infecteds=None, initial_recovereds = 
         if withKs, also returns
             Ks (numpy array)
                 The observed degrees in the population.
-        ''' 
+        '''
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is not None and initial_recovereds is not None:
@@ -285,13 +285,13 @@ def _get_NkNl_and_IC_as_arrays_(G, initial_infecteds=None, initial_recovereds = 
                 elif status[v] == 'I':
                     IkIl0[Ks.index(k)][Ks.index(l)] += 1
                     IkIl0[Ks.index(l)][Ks.index(k)] += 1
-    else: 
+    else:
         if rho is None:
-            rho = 1./G.order()      
+            rho = 1./G.order()
         SkSl0 = (1-rho)*(1-rho)*NkNl
         SkIl0 = (1-rho)*rho*NkNl
         IkIl0 = rho*rho*NkNl
-        
+
     if withKs:
         if SIR:
             return NkNl, SkSl0, SkIl0, np.array(Ks)
@@ -406,8 +406,8 @@ def get_Pnk(G):
         for k2 in nbr_degrees:
             Pnk[k1][k2] += 1./(k1*Nk[k1])
     return Pnk
-    
-    
+
+
 def estimate_R0(G, tau = None, gamma = None, transmissibility = None):
     r'''
     provides the estimate of the reproductive number R_0 = T <K^2-K>/<K>
@@ -445,7 +445,7 @@ def estimate_R0(G, tau = None, gamma = None, transmissibility = None):
     **R_0** float
         Reproductive number :math:`\mathcal{R}_0= T \langle K^2-K\rangle/\langle K\rangle`
     '''
-    
+
     if transmissibility is None:
         if tau is None or gamma is None:
             raise EoN.EoNError("not enough information give to estimate transmission probability")
@@ -455,7 +455,7 @@ def estimate_R0(G, tau = None, gamma = None, transmissibility = None):
     psiDPrime = get_PGFDPrime(Pk)
     psiPrime = get_PGFPrime(Pk)
     return transmissibility * psiDPrime(1.)/psiPrime(1.)
-            
+
 ##################
 #                #
 #    ODE CODE    #
@@ -467,7 +467,7 @@ def estimate_R0(G, tau = None, gamma = None, transmissibility = None):
 ########  given node and who its neighbors are, we track probability of
 ########  having given status based on probabilities of neighbors.  Assumes
 ########  independence.
-    
+
 def _dSIS_individual_based_(Y, t, G, nodelist, trans_rate_fxn, rec_rate_fxn):
     N = len(nodelist)
     dY = np.zeros(N)
@@ -479,13 +479,13 @@ def _dSIS_individual_based_(Y, t, G, nodelist, trans_rate_fxn, rec_rate_fxn):
         #numpy sparse matrices.  Perhaps that works?
         #No plan to do premature optimization.  Let's get it
         #working and then see if it's slow.
-        dY[index] = sum(trans_rate_fxn(node,nbr)*(1-Y[node])*Y[nbr] 
+        dY[index] = sum(trans_rate_fxn(node,nbr)*(1-Y[node])*Y[nbr]
                             for nbr in G.neighbors(node)) - rec_rate_fxn(node)*Yi
     return dY
 
-def _dSIR_individual_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, 
+def _dSIR_individual_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn,
                             rec_rate_fxn):
-    '''    <\dot{X}_i> = - tau sum_j g_{ij} <Xi><Yj>
+    r'''    <\dot{X}_i> = - tau sum_j g_{ij} <Xi><Yj>
     <\dot{Y}_i> = tau sum_j g_{ij} <Xi><Yj> - gamma_i <Y_i>
     Z_i = 1-X_i-Y_i
     '''
@@ -502,18 +502,18 @@ def _dSIR_individual_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn,
         #numpy sparse matrices.  Perhaps that works?
         #No plan to do premature optimization.  Let's get it
         #working and then see if it's slow.
-        
-        dX[index] = -Xi*sum(trans_rate_fxn(node,nbr)*Y[index_of_node[nbr]] 
+
+        dX[index] = -Xi*sum(trans_rate_fxn(node,nbr)*Y[index_of_node[nbr]]
                                 for nbr in G.neighbors(node))
         dY[index] =  -dX[index] - rec_rate_fxn(node)*Yi
     dV = np.concatenate((dX,dY), axis=0)
     return np.array(dV)
 
-def SIS_individual_based(G, tau, gamma, rho = None, Y0=None, nodelist = None, tmin = 0, 
-                            tmax = 100, tcount = 1001, transmission_weight=None, 
+def SIS_individual_based(G, tau, gamma, rho = None, Y0=None, nodelist = None, tmin = 0,
+                            tmax = 100, tcount = 1001, transmission_weight=None,
                             recovery_weight=None, return_full_data = False):
     #tested in test_SIS_individual_based
-    '''Encodes System (3.7) of Kiss, Miller, & Simon.  Please cite the
+    r'''Encodes System (3.7) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
     See also:
@@ -608,27 +608,27 @@ def SIS_individual_based(G, tau, gamma, rho = None, Y0=None, nodelist = None, tm
             raise EoN.EoNError("cannot define both rho and Y0")
         else:
             Y0 = rho*np.ones(len(nodelist))
-    
-                            
-    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma, 
+
+
+    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma,
                                                 transmission_weight,
                                                 recovery_weight)
 
     times = np.linspace(tmin, tmax, tcount)
-    Y = integrate.odeint(_dSIS_individual_based_, Y0, times,  
+    Y = integrate.odeint(_dSIS_individual_based_, Y0, times,
                                     args =(G, nodelist, trans_rate_fxn, rec_rate_fxn))
     Is = Y.T
-    Ss = np.ones(len(Is))[:,None]-Is 
-    
+    Ss = np.ones(len(Is))[:,None]-Is
+
     if return_full_data:
         return times, Ss, Is
     else:
         return times, sum(Ss), sum(Is)
 
 
-def SIR_individual_based(G, tau, gamma, rho = None, Y0 = None, X0= None, 
-                            nodelist = None, tmin = 0, 
-                            tmax = 100, tcount = 1001, transmission_weight=None, 
+def SIR_individual_based(G, tau, gamma, rho = None, Y0 = None, X0= None,
+                            nodelist = None, tmin = 0,
+                            tmax = 100, tcount = 1001, transmission_weight=None,
                             recovery_weight=None, return_full_data = False):
     '''
     Encodes System (3.30) of Kiss, Miller, & Simon.  Please cite the
@@ -721,25 +721,25 @@ def SIR_individual_based(G, tau, gamma, rho = None, Y0 = None, X0= None,
     if rho is None and Y0 is None:
         raise EoN.EoNError("must define at least one of rho and Y0")
     if X0 is not None and Y0 is None:
-        raise EoN.EoNError("cannot define X0 without defining Y0") 
+        raise EoN.EoNError("cannot define X0 without defining Y0")
 
-    
+
     if nodelist is None:
         if Y0 is not None:
             raise EoN.EoNError("cannot define Y0 without defining nodelist")
         nodelist = G.nodes()
-           
+
     #nodelist is now guaranteed to exist.
     if rho is not None:
         if Y0 is not None:
             raise EoN.EoNError("cannot define both rho and Y0")
         else:
             Y0 = rho*np.ones(len(nodelist))
-    
+
     if X0 is None:
         X0 = 1- Y0
-        
-    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma, 
+
+    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma,
                                                 transmission_weight,
                                                 recovery_weight)
 
@@ -750,8 +750,8 @@ def SIR_individual_based(G, tau, gamma, rho = None, Y0 = None, X0= None,
     N = len(X0)
     times = np.linspace(tmin, tmax, tcount)
     V0 = np.concatenate((X0,Y0), axis=0)
-    V = integrate.odeint(_dSIR_individual_based_, V0, times, 
-                            args = (G, nodelist, index_of_node, 
+    V = integrate.odeint(_dSIR_individual_based_, V0, times,
+                            args = (G, nodelist, index_of_node,
                                     trans_rate_fxn, rec_rate_fxn))
     Ss = V.T[:N]
     S = Ss.sum(axis=0)
@@ -766,11 +766,11 @@ def SIR_individual_based(G, tau, gamma, rho = None, Y0 = None, X0= None,
 
 
 def SIS_individual_based_pure_IC(G, tau, gamma, initial_infecteds, nodelist = None,
-                                    tmin = 0, tmax = 100, tcount = 1001, 
-                                    transmission_weight=None, 
-                                    recovery_weight=None, 
+                                    tmin = 0, tmax = 100, tcount = 1001,
+                                    transmission_weight=None,
+                                    recovery_weight=None,
                                     return_full_data = False):
-    '''Encodes System (3.7) of Kiss, Miller, & Simon.  Please cite the
+    r'''Encodes System (3.7) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
     The difference between this and SIS_individual_based is that this 
@@ -844,21 +844,21 @@ def SIS_individual_based_pure_IC(G, tau, gamma, initial_infecteds, nodelist = No
     initial_infecteds = set(initial_infecteds)
     Y0 = np.array([1 if u in initial_infecteds else 0 for u in nodelist])
 
-    return SIS_individual_based(G, tau, gamma, Y0=Y0, nodelist=nodelist, 
+    return SIS_individual_based(G, tau, gamma, Y0=Y0, nodelist=nodelist,
                                 tmin=tmin, tmax=tmax, tcount=tcount,
-                                transmission_weight=transmission_weight, 
-                                recovery_weight = recovery_weight, 
+                                transmission_weight=transmission_weight,
+                                recovery_weight = recovery_weight,
                                 return_full_data = return_full_data)
-        
 
 
-def SIR_individual_based_pure_IC(G, tau, gamma, initial_infecteds, 
-                                    initial_recovereds = None, nodelist=None, 
-                                    tmin = 0, tmax = 100, tcount = 1001, 
-                                    transmission_weight=None, 
-                                    recovery_weight=None, 
+
+def SIR_individual_based_pure_IC(G, tau, gamma, initial_infecteds,
+                                    initial_recovereds = None, nodelist=None,
+                                    tmin = 0, tmax = 100, tcount = 1001,
+                                    transmission_weight=None,
+                                    recovery_weight=None,
                                     return_full_data = False):
-    '''Encodes System (3.30) of Kiss, Miller, & Simon.  Please cite the
+    r'''Encodes System (3.30) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
     The difference between this and SIR_individual_based is that this 
@@ -928,23 +928,23 @@ def SIR_individual_based_pure_IC(G, tau, gamma, initial_infecteds,
         non_susceptibles = initial_recovereds.union(initial_infecteds)
         X0 = np.array([0 if u in non_susceptibles  else 1
                             for u in nodelist])
-    
-    return SIR_individual_based(G, tau, gamma, nodelist, X0, Y0, tmin, 
-                                tmax, tcount, transmission_weight, 
+
+    return SIR_individual_based(G, tau, gamma, nodelist, X0, Y0, tmin,
+                                tmax, tcount, transmission_weight,
                                 recovery_weight, return_full_data)
 
 ########   PAIR BASED
 
 def _dSIS_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate_fxn):
     '''
-    <\dot{Y}_i> = tau \sum_j g_{ij} <XiYj>  -  gamma_i <Yi>
-    <\dot{XY}_ij> = tau sum_{k \neq i} g_{jk} <XiXj><XjYk>/<Xj>
+    <\\dot{Y}_i> = tau \\sum_j g_{ij} <XiYj>  -  gamma_i <Yi>
+    <\\dot{XY}_ij> = tau sum_{k \neq i} g_{jk} <XiXj><XjYk>/<Xj>
                    - tau sum_{k neq j} g_{ik} <YkXi><XiYj>/<Xi>
                    - tau g_{ij}<XiYj> - gamma_j <XiYj>  
                    + ***gamma_i <YiYj>***
-    <\dot{XX}_ij> = - tau sum_{k\neq i} g_{jk} <XiXj><XjYk>/<Xj>
+    <\\dot{XX}_ij> = - tau sum_{k\neq i} g_{jk} <XiXj><XjYk>/<Xj>
                     - tau sum_{k neq j} g_{ik} <YkXi><XiXj>/<Xi>
-                    + **** \gamma_i <YiXj> + gamma_j <XiYj>****
+                    + **** \\gamma_i <YiXj> + gamma_j <XiYj>****
 
     <Xi>=1-<Yi>
     <YiYj> = 1 - <XiXj> - <XiYj> - <XjYi>
@@ -966,21 +966,21 @@ def _dSIS_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
     N=G.order()
     Y = V[0:N] #infecteds
     X = 1-Y    #susceptibles
-    Xinv = np.array([1/v if v!=0 else 0 for v in X]) 
+    Xinv = np.array([1/v if v!=0 else 0 for v in X])
             #there are places where we divide by X[i] which may = 0.
             #In those cases the numerator is (very) 0, so it's easier
             #to set this up as mult by inverse with a dummy value when
             #it is 1/0.
     Yinv = np.array([1/v if v!=0 else 0 for v in Y])
-    
+
     XY = V[N: N+N**2]
     XX = V[N+N**2:]
 
     XY.shape = (N,N)
     XX.shape = (N,N)
-    
 
-    YX = XY.T   #not really needed, 
+
+    YX = XY.T   #not really needed,
                 #but helps keep consistent with equations as written.
 
     YY = 1 - XY-XX-YX
@@ -989,18 +989,18 @@ def _dSIS_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
     dXY = np.zeros((N,N))
     dXX = np.zeros((N,N))
 
-    
-    #I could make the below more efficient, but I think this sequence of for 
+
+    #I could make the below more efficient, but I think this sequence of for
     # loops is easier to read, or at least understand.
-    #I expect this isn't the bottleneck.  
+    #I expect this isn't the bottleneck.
     #Will avoid (premature) optimization for now.
     for u in nodelist:
         i = index_of_node[u]
-        dY[i] += -rec_rate_fxn(u)*Y[i] 
+        dY[i] += -rec_rate_fxn(u)*Y[i]
         for v in G.neighbors(u):
             j = index_of_node[v]
             dY[i] += trans_rate_fxn(u,v)*XY[i,j]
-            
+
             dXY[i,j] +=  - (trans_rate_fxn(u,v)+rec_rate_fxn(v))*XY[i,j] \
                             + rec_rate_fxn(u)*YY[i,j]
             dXX[i,j] +=  rec_rate_fxn(u)*YX[i,j] + rec_rate_fxn(v)*XY[i,j]
@@ -1008,11 +1008,11 @@ def _dSIS_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
             for w in G.neighbors(v):
                 if w == u: #skip these
                     continue
-                #so w != v. 
+                #so w != v.
                 k= index_of_node[w]
 
-                dXY[i,j] += trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j] 
-                dXX[i,j] += -trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j] 
+                dXY[i,j] += trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j]
+                dXX[i,j] += -trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j]
             for w in G.neighbors(u):
                 if w == v:
                     continue #skip these
@@ -1029,12 +1029,12 @@ def _dSIS_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
 
 def _dSIR_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate_fxn):
     '''
-    <\dot{X}_i> = -tau sum_j g_{ij} <XiYj>
-    <\dot{Y}_i> = tau \sum_j g_{ij} <XiYj>  -  gamma_i <Y_i>
-    <\dot{XY}_ij> = tau sum_{k \neq i} g_{jk} <XiXj><XjYk>/<Xj>
+    <\\dot{X}_i> = -tau sum_j g_{ij} <XiYj>
+    <\\dot{Y}_i> = tau \\sum_j g_{ij} <XiYj>  -  gamma_i <Y_i>
+    <\\dot{XY}_ij> = tau sum_{k \neq i} g_{jk} <XiXj><XjYk>/<Xj>
                    - tau sum_{k neq j} g_{ik} <YkXi><XiYj>/<Xi>
                    - tau g_{ij}<XiYj> - gamma_j <XiYj> 
-    <\dot{XX}_ij> = -tau sum_{k\neq j} gik <YkXi><XiXj>/<Xi>
+    <\\dot{XX}_ij> = -tau sum_{k\neq j} gik <YkXi><XiXj>/<Xi>
                     -tau sum_{k neq i} gjk <XiXj><XjYk>/<Xj>
     <>
     The equations as coded involve all pairs rather than just the
@@ -1048,22 +1048,22 @@ def _dSIR_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
     N=G.order()
     X = V[0:N] #susceptibles
     Y = V[N:2*N] #infecteds
-    Xinv = np.array([1/v if v!=0 else 0 for v in X]) 
+    Xinv = np.array([1/v if v!=0 else 0 for v in X])
             #there are places where we divide by X[i] which may = 0.
             #In those cases the numerator is (very) 0, so it's easier
             #to set this up as mult by inverse with a dummy value when
             #it is 1/0.
     Yinv = np.array([1/v if v!=0 else 0 for v in Y])
-    
+
     XY = V[2*N: 2*N+N**2]
     XX = V[2*N+N**2:]
 
     #print X.shape, Y.shape, XY.shape, XX.shape, N
     XY.shape = (N,N)
     XX.shape = (N,N)
-    
 
-    YX = XY.T   #not really needed, 
+
+    YX = XY.T   #not really needed,
                 #but helps keep consistent with equations as written.
 
     dX = np.zeros(N)
@@ -1071,34 +1071,34 @@ def _dSIR_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
     dXY = np.zeros((N,N))
     dXX = np.zeros((N,N))
 
-    
-    #I could make the below more efficient, 
-    #but I think this sequence of for loops is easier to read, 
+
+    #I could make the below more efficient,
+    #but I think this sequence of for loops is easier to read,
     #or at least understand.
-    #I expect it to run quickly regardless.  Will avoid (premature) 
+    #I expect it to run quickly regardless.  Will avoid (premature)
     #optimization for now.
-    
-    #Okay -this does not appear to run quickly (at least for a complete graph). 
+
+    #Okay -this does not appear to run quickly (at least for a complete graph).
     #I'll need to do some profiling.
     for u in nodelist:
         i = index_of_node[u]
-        dY[i] += -rec_rate_fxn(u)*Y[i] 
+        dY[i] += -rec_rate_fxn(u)*Y[i]
         for v in G.neighbors(u):
             j = index_of_node[v]
             dX[i] += -trans_rate_fxn(u,v)*XY[i,j]
             dY[i] += trans_rate_fxn(u,v)*XY[i,j]
-            
-            dXY[i,j] +=  - (trans_rate_fxn(u,v)+rec_rate_fxn(v))*XY[i,j] 
+
+            dXY[i,j] +=  - (trans_rate_fxn(u,v)+rec_rate_fxn(v))*XY[i,j]
 
             #all the pure pairs are dealt with.  Now the triples
             for w in G.neighbors(v):
                 if w == u: #skip these
                     continue
-                #so w != u.  
+                #so w != u.
                 k= index_of_node[w]
                 #i corresponds to u, j to v and k to w.
-                dXY[i,j] += trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j]  
-                dXX[i,j] += -trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j] 
+                dXY[i,j] += trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j]
+                dXX[i,j] += -trans_rate_fxn(v,w) * XX[i,j] * XY[j,k]*Xinv[j]
             for w in G.neighbors(u):
                 if w == v:
                     continue #skip these
@@ -1114,8 +1114,8 @@ def _dSIR_pair_based_(V, t, G, nodelist, index_of_node, trans_rate_fxn, rec_rate
 
 
 def SIS_pair_based(G, tau, gamma, rho = None, nodelist = None,
-                    Y0=None, XY0=None, XX0 = None, tmin = 0, tmax = 100,  
-                    tcount = 1001, transmission_weight=None, 
+                    Y0=None, XY0=None, XX0 = None, tmin = 0, tmax = 100,
+                    tcount = 1001, transmission_weight=None,
                     recovery_weight=None, return_full_data = False):
     r'''
     Encodes System (3.26) of Kiss, Miller, & Simon.  Please cite the
@@ -1227,28 +1227,28 @@ def SIS_pair_based(G, tau, gamma, rho = None, nodelist = None,
 '''
 
     N = G.order()
-        
+
     if Y0 is None and rho is None:
         rho = 1./N
     if Y0 is not None and rho is not None:
         raise EoN.EoNError("either Y0 or rho must be defined")
     if Y0 is not None and  nodelist is None:
         raise EoN.EoNError("cannot define Y0 without nodelist")
-        
+
     if  nodelist is None: #only get here if Y0 is None
         nodelist = G.nodes()
         Y0 = np.array([rho]*N)
     if len(Y0) != N:
-        raise EoN.EoNError("incompatible length for Y0")            
+        raise EoN.EoNError("incompatible length for Y0")
 
-    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma, 
+    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma,
                                                 transmission_weight,
                                                 recovery_weight)
 
     times = np.linspace(tmin,tmax,tcount)
 
 
-    
+
     X0=1-Y0
 
     if XY0 is None:
@@ -1260,20 +1260,20 @@ def SIS_pair_based(G, tau, gamma, rho = None, nodelist = None,
         XX0 = X0[:,None]*X0[None,:]
     elif XX0.shape != (N,N):
         raise EoN.EoNError("incompatible lengths for XX0 and Y0")
-        
+
     A = nx.adjacency_matrix(G).toarray()
     XY0 = XY0*A  #in principle the equations should still work for pairs not
-    XX0 = XX0*A  #in an edge, but this led to an error with odeint.  
+    XX0 = XX0*A  #in an edge, but this led to an error with odeint.
                  #Multiplying by A restricts attention just to present edges.
-    
+
     XY0.shape=(N**2,1)
     XX0.shape=(N**2,1)
-    
+
     V0 = np.concatenate((Y0[:,None], XY0, XX0), axis=0).T[0]
     index_of_node = {node:i for i, node in enumerate(nodelist)}
 
-    V = _my_odeint_(_dSIS_pair_based_, V0, times, 
-                            args = (G, nodelist, index_of_node, trans_rate_fxn, 
+    V = _my_odeint_(_dSIS_pair_based_, V0, times,
+                            args = (G, nodelist, index_of_node, trans_rate_fxn,
                                     rec_rate_fxn))
     Ys = V.T[0:N]
     I = Ys.sum(axis=0)
@@ -1353,11 +1353,11 @@ def SIS_pair_based_pure_IC(G, tau, gamma, initial_infecteds, nodelist = None,
     N = len(nodelist)
     #make Y0[u] be 1 if infected 0 if not
     initial_infecteds = set(initial_infecteds) #for fast membership test
-    Y0 = np.array([1 if u in initial_infecteds else 0 for u in nodelist])    
-    
+    Y0 = np.array([1 if u in initial_infecteds else 0 for u in nodelist])
+
     return SIS_pair_based(G, tau, gamma, nodelist = nodelist,
                             Y0=Y0, tmin=tmin, tmax=tmax, tcount=tcount,
-                            transmission_weight=transmission_weight, 
+                            transmission_weight=transmission_weight,
                             recovery_weight=recovery_weight,
                             return_full_data=return_full_data)
 
@@ -1380,10 +1380,10 @@ def _SIR_pair_based_initialize_node_data(G, rho, nodelist, X0, Y0):
         #otherwise X0 is given and Z0=1-X0-Y0
     return nodelist, X0, Y0
 
-def _SIR_pair_based_initialize_edge_data(G, edgelist, nodelist, XY0, YX0, 
+def _SIR_pair_based_initialize_edge_data(G, edgelist, nodelist, XY0, YX0,
                                             XX0, X0, Y0, index_of_node):
     if (not XY0 is None or YX0 is None or XX0 is None) \
-            and (XY0 is not None or YX0 !=None  or XX0 is not None):  
+            and (XY0 is not None or YX0 !=None  or XX0 is not None):
             #at least one defined and one not defined
         raise EoN.EoNError("must define all of XY0, YX0, and XX0 or none of them")
     if not edgelist:
@@ -1403,19 +1403,19 @@ def _SIR_pair_based_initialize_edge_data(G, edgelist, nodelist, XY0, YX0,
                raise EoN.EoNError("edge probabilities inconsistent with node \
                                 probabilities")
     else:
-        XY0 = np.array([X0[index_of_node[u]]*Y0[index_of_node[v]] 
+        XY0 = np.array([X0[index_of_node[u]]*Y0[index_of_node[v]]
                             for u,v in edgelist])
-        YX0 = np.array([Y0[index_of_node[u]]*X0[index_of_node[v]] 
+        YX0 = np.array([Y0[index_of_node[u]]*X0[index_of_node[v]]
                             for u,v in edgelist])
-        XX0 = np.array([X0[index_of_node[u]]*X0[index_of_node[v]] 
+        XX0 = np.array([X0[index_of_node[u]]*X0[index_of_node[v]]
                             for u,v in edgelist])
     return edgelist, XY0, YX0, XX0
 
 
-def SIR_pair_based(G, tau, gamma, rho = None, nodelist=None, Y0=None, 
-                    X0 = None, XY0=None, 
-                    XX0 = None, tmin = 0, tmax = 100, tcount = 1001, 
-                    transmission_weight=None, recovery_weight=None, 
+def SIR_pair_based(G, tau, gamma, rho = None, nodelist=None, Y0=None,
+                    X0 = None, XY0=None,
+                    XX0 = None, tmin = 0, tmax = 100, tcount = 1001,
+                    transmission_weight=None, recovery_weight=None,
                     return_full_data = False):
     '''
     Encodes System (3.39) of Kiss, Miller, & Simon.  Please cite the
@@ -1532,21 +1532,21 @@ def SIR_pair_based(G, tau, gamma, rho = None, nodelist=None, Y0=None,
     '''
 
     N = G.order()
-        
+
     if Y0 is None and rho is None:
         rho = 1./N
     if Y0 is not None and rho is not None:
         raise EoN.EoNError("either Y0 or rho must be defined")
     if Y0 is not None and  nodelist is None:
         raise EoN.EoNError("cannot define Y0 without nodelist")
-        
+
     if  nodelist is None: #only get here if Y0 is None
         nodelist = G.nodes()
         Y0 = np.array([rho]*N)
     if len(Y0) != N:
-        raise EoN.EoNError("incompatible length for Y0")            
+        raise EoN.EoNError("incompatible length for Y0")
 
-    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma, 
+    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma,
                                                 transmission_weight,
                                                 recovery_weight)
 
@@ -1566,12 +1566,12 @@ def SIR_pair_based(G, tau, gamma, rho = None, nodelist=None, Y0=None,
             raise EoN.EoNError("incompatible lengths for XX0 and Y0")
     A = nx.adjacency_matrix(G).toarray()
     XY0 = XY0*A  #in principle the equations should still work for pairs not
-    XX0 = XX0*A  #in an edge, but this led to the error with odeint.  
+    XX0 = XX0*A  #in an edge, but this led to the error with odeint.
                  #Multiplying by A restricts attention just to present edges.
-    
+
     XY0.shape=(N**2,1)
     XX0.shape=(N**2,1)
-    
+
     V0 = np.concatenate((X0[:,None], Y0[:,None], XY0, XX0), axis=0).T[0]
     #print V0.shape
     index_of_node = {node:i for i, node in enumerate(nodelist)}
@@ -1580,8 +1580,8 @@ def SIR_pair_based(G, tau, gamma, rho = None, nodelist=None, Y0=None,
     #        index_of_node[node] = i
 
 
-    V = integrate.odeint(_dSIR_pair_based_, V0, times, 
-                            args = (G, nodelist, index_of_node, trans_rate_fxn, 
+    V = integrate.odeint(_dSIR_pair_based_, V0, times,
+                            args = (G, nodelist, index_of_node, trans_rate_fxn,
                                     rec_rate_fxn))
     Xs = V.T[0:N]
     S = Xs.sum(axis=0)
@@ -1600,10 +1600,10 @@ def SIR_pair_based(G, tau, gamma, rho = None, nodelist=None, Y0=None,
         return times, S, I, R
 
 
-def SIR_pair_based_pure_IC(G, tau, gamma, initial_infecteds, 
-                            initial_recovereds = None, nodelist=None, 
-                            tmin = 0, tmax = 100, tcount = 1001, 
-                            transmission_weight=None, recovery_weight=None, 
+def SIR_pair_based_pure_IC(G, tau, gamma, initial_infecteds,
+                            initial_recovereds = None, nodelist=None,
+                            tmin = 0, tmax = 100, tcount = 1001,
+                            transmission_weight=None, recovery_weight=None,
                             return_full_data = False):
     '''
     Encodes System (3.39) of Kiss, Miller, & Simon, using a "pure initial 
@@ -1663,7 +1663,7 @@ def SIR_pair_based_pure_IC(G, tau, gamma, initial_infecteds,
     if ... is False:
         returns times, S, I, R
     '''
-    
+
     if nodelist is None:
         nodelist = G.nodes()
     N = len(nodelist)
@@ -1677,10 +1677,10 @@ def SIR_pair_based_pure_IC(G, tau, gamma, initial_infecteds,
         non_susceptibles = initial_recovereds.union(initial_infecteds)
         X0 = np.array([0 if u in non_susceptibles  else 1
                             for u in nodelist])
-    
+
     return SIR_pair_based(G, tau, gamma, nodelist=nodelist, Y0=Y0, X0=X0,
                             tmin=tmin, tmax=tmax, tcount=tcount,
-                            transmission_weight=transmission_weight, 
+                            transmission_weight=transmission_weight,
                             recovery_weight=recovery_weight,
                             return_full_data=return_full_data)
 ######    HOMOGENEOUS MEANFIELD
@@ -1699,8 +1699,8 @@ def _dSIR_homogeneous_meanfield_(X, t, n_over_N, tau, gamma):
     dX = np.array([dSdt, dIdt])
     return dX
 
-           
-def SIS_homogeneous_meanfield(S0, I0, n, tau, gamma, tmin=0, tmax=100, 
+
+def SIS_homogeneous_meanfield(S0, I0, n, tau, gamma, tmin=0, tmax=100,
                                 tcount=1001):
     '''Encodes System (4.8) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -1708,9 +1708,9 @@ def SIS_homogeneous_meanfield(S0, I0, n, tau, gamma, tmin=0, tmax=100,
     In the text this is often referred to as the 
     "mean-field model closed at the level of pairs"
 
-       [\dot{S}] = \gamma [I] - tau n[S][I]/N
+       [\\dot{S}] = \\gamma [I] - tau n[S][I]/N
        
-       [\dot{I}] = \tau n[S][I]/N - \gamma [I]
+       [\\dot{I}] = \tau n[S][I]/N - \\gamma [I]
 
     This is the SIS version of the "Kermack-McKendrick equations".
     
@@ -1754,12 +1754,12 @@ def SIS_homogeneous_meanfield(S0, I0, n, tau, gamma, tmin=0, tmax=100,
     N=S0+I0
     X0=np.array([S0,I0])
     times=np.linspace(tmin,tmax,tcount)
-    X = integrate.odeint(_dSIS_homogeneous_meanfield_, X0,times, 
+    X = integrate.odeint(_dSIS_homogeneous_meanfield_, X0,times,
                             args=(float(n)/N, tau, gamma))
     S, I= X.T
     return times, S, I
 
-def SIR_homogeneous_meanfield(S0, I0, R0, n, tau, gamma, tmin=0, tmax=100, 
+def SIR_homogeneous_meanfield(S0, I0, R0, n, tau, gamma, tmin=0, tmax=100,
                                 tcount=1001):
     '''Encodes System (4.9) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -1769,9 +1769,9 @@ def SIR_homogeneous_meanfield(S0, I0, R0, n, tau, gamma, tmin=0, tmax=100,
     
     These are often referred to as the "Kermack-McKendrick equations"
 
-    [\dot{S}] = - tau n[S][I]/N
-    [\dot{I}] = \tau n[S][I]/N - \gamma [I]
-    [\dot{R}] = \gamma [I]
+    [\\dot{S}] = - tau n[S][I]/N
+    [\\dot{I}] = \tau n[S][I]/N - \\gamma [I]
+    [\\dot{R}] = \\gamma [I]
 
 
     :Arguments: 
@@ -1817,14 +1817,14 @@ def SIR_homogeneous_meanfield(S0, I0, R0, n, tau, gamma, tmin=0, tmax=100,
     N=S0+I0+R0
     X0= np.array([S0,I0])
     times = np.linspace(tmin,tmax,tcount)
-    X = integrate.odeint(_dSIR_homogeneous_meanfield_, X0, times, 
+    X = integrate.odeint(_dSIR_homogeneous_meanfield_, X0, times,
                             args=(float(n)/N, tau, gamma))
     S, I= X.T
     R = N-S-I
     return times, S, I, R
 
-def SIS_homogeneous_meanfield_from_graph(G, tau, gamma, 
-                                        initial_infecteds=None, rho = None, 
+def SIS_homogeneous_meanfield_from_graph(G, tau, gamma,
+                                        initial_infecteds=None, rho = None,
                                         tmin = 0, tmax=100, tcount=1001):
     r'''
     Calls SIR_homogeneous_pairwise after calculating S0, I0, & n, 
@@ -1867,11 +1867,11 @@ def SIS_homogeneous_meanfield_from_graph(G, tau, gamma,
     else:
         I0 = 1.
     S0 = G.order()-I0
-    return SIS_homogeneous_meanfield(S0, I0, kave, tau, gamma, tmin=tmin, tmax=tmax, 
+    return SIS_homogeneous_meanfield(S0, I0, kave, tau, gamma, tmin=tmin, tmax=tmax,
                                 tcount=tcount)
-                                
-def SIR_homogeneous_meanfield_from_graph(G, tau, gamma, initial_infecteds=None, 
-                                    initial_recovereds = None, rho = None, 
+
+def SIR_homogeneous_meanfield_from_graph(G, tau, gamma, initial_infecteds=None,
+                                    initial_recovereds = None, rho = None,
                                     tmin = 0, tmax=100, tcount=1001):
     r'''
     Calls SIR_homogeneous_pairwise after calculating S0, I0, R0, & n, 
@@ -1923,9 +1923,9 @@ def SIR_homogeneous_meanfield_from_graph(G, tau, gamma, initial_infecteds=None,
     else:
         I0 = 1.
     R0 = len(initial_recovereds)
-        
+
     S0 = G.order()-I0 - R0
-    return SIR_homogeneous_meanfield(S0, I0, R0, kave, tau, gamma, tmin=tmin, tmax=tmax, 
+    return SIR_homogeneous_meanfield(S0, I0, R0, kave, tau, gamma, tmin=tmin, tmax=tmax,
                                 tcount=tcount)
 
 ####   HOMOGENEOUS PAIRWISE
@@ -1945,7 +1945,7 @@ def _dSIS_homogeneous_pairwise_(X, t, N, n, tau, gamma):
     n([S]+[I]) should equal [SS]+2[SI]+[II], so II will be calculated 
     based on this.
     '''
-    S, SI, SS = X 
+    S, SI, SS = X
     I = N-S
     II = N*n - SS - 2*SI
     nm1_over_n = (n-1.)/n
@@ -1955,7 +1955,7 @@ def _dSIS_homogeneous_pairwise_(X, t, N, n, tau, gamma):
     dSSdt = 2*gamma*SI - 2*tau*nm1_over_n*SI*SS/S
     #dIIdt = -2*gamma*II + 2*tau*nm1_over_n*SI**2/S + 2*tau*SI
     dX = np.array([dSdt,dSIdt,dSSdt])
-    return dX 
+    return dX
 
 
 def _dSIR_homogeneous_pairwise_(X, t, n, tau, gamma):
@@ -1968,8 +1968,8 @@ def _dSIR_homogeneous_pairwise_(X, t, n, tau, gamma):
     dX =  np.array([dSdt,dIdt,dSIdt,dSSdt])
     return dX
 
-def SIS_homogeneous_pairwise(S0, I0, SI0, SS0, n, tau, gamma, tmin = 0, 
-                                tmax=100, tcount=1001, 
+def SIS_homogeneous_pairwise(S0, I0, SI0, SS0, n, tau, gamma, tmin = 0,
+                                tmax=100, tcount=1001,
                                 return_full_data=False):
     r'''Encodes System (4.10) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -2033,22 +2033,22 @@ def SIS_homogeneous_pairwise(S0, I0, SI0, SS0, n, tau, gamma, tmin = 0,
         raise EoN.EoNError('Initial condition has more SS, SI, and IS edges than allowed')
 
     X0 = np.array([S0, SI0, SS0])
-    
+
     times = np.linspace(tmin,tmax,tcount)
-    X = integrate.odeint(_dSIS_homogeneous_pairwise_, X0, times, 
+    X = integrate.odeint(_dSIS_homogeneous_pairwise_, X0, times,
                             args=(N, n, tau, gamma))
     S, SI, SS= X.T
     I = N-S
-    
+
     if return_full_data:
         II = N*n - SS-2*SI
         return times, S, I, SI, SS, II
     else:
         return times, S, I
-    
-    
-def SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, n, tau, gamma, tmin = 0, 
-                                tmax=100, tcount=1001, 
+
+
+def SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, n, tau, gamma, tmin = 0,
+                                tmax=100, tcount=1001,
                                 return_full_data=False):
     '''Encodes System (4.11) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -2056,12 +2056,12 @@ def SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, n, tau, gamma, tmin = 0,
     In the text this is often referred to as the 
     "mean-field model closed at the level of triples"
 
-    [\dot{S}] = - tau [SI]
-    [\dot{I}] = \tau [SI] - \gamma [I]
-    [\dot{R}] = \gamma [I]    ;    [R] = N-[S]-[I]
-    [\dot{SI}] = -\gamma [SI]+ \tau ((n-1)/n) [SI]([SS]-[SI])/[S] 
+    [\\dot{S}] = - tau [SI]
+    [\\dot{I}] = \tau [SI] - \\gamma [I]
+    [\\dot{R}] = \\gamma [I]    ;    [R] = N-[S]-[I]
+    [\\dot{SI}] = -\\gamma [SI]+ \tau ((n-1)/n) [SI]([SS]-[SI])/[S] 
                  - \tau [SI]
-    [\dot{SS}] = - 2\tau ((n-1)/n) [SI][SS]/[S]
+    [\\dot{SS}] = - 2\tau ((n-1)/n) [SI][SS]/[S]
 
     conserved quantities: [S]+[I]+[R]  also 
                           [SS]+[II]+[RR] + 2([SI] + [SR] + [IR])
@@ -2123,7 +2123,7 @@ def SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, n, tau, gamma, tmin = 0,
         raise EoN.EoNError('Initial condition has more SS, SI, and IS edges than allowed')
     X0 = np.array([S0, I0, SI0, SS0])
     times = np.linspace(tmin,tmax,tcount)
-    X = integrate.odeint(_dSIR_homogeneous_pairwise_, X0, times, 
+    X = integrate.odeint(_dSIR_homogeneous_pairwise_, X0, times,
                             args=(n, tau, gamma))
     S, I, SI, SS = X.T
     R = N-S-I
@@ -2133,8 +2133,8 @@ def SIR_homogeneous_pairwise(S0, I0, R0, SI0, SS0, n, tau, gamma, tmin = 0,
         return times, S, I, R
 
 
-def SIS_homogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, 
-                                        rho = None, tmin = 0, tmax=100, 
+def SIS_homogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
+                                        rho = None, tmin = 0, tmax=100,
                                         tcount=1001, return_full_data=False):
     r'''
     Calls SIS_homogeneous_pairwise after calculating S0, I0, SI0, SS0, n based
@@ -2218,13 +2218,13 @@ def SIS_homogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
         I0 = rho*N
         SI0 = (1-rho)*N*n*rho
         SS0 = (1-rho)*N*n*(1-rho)
-    return SIS_homogeneous_pairwise(S0, I0, SI0, SS0, n, tau, gamma, tmin, 
+    return SIS_homogeneous_pairwise(S0, I0, SI0, SS0, n, tau, gamma, tmin,
                                         tmax, tcount, return_full_data)
 
-def SIR_homogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, 
+def SIR_homogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
                                         initial_recovereds = None,
-                                        rho = None, tmin = 0, 
-                                        tmax=100, tcount=1001, 
+                                        rho = None, tmin = 0,
+                                        tmax=100, tcount=1001,
                                         return_full_data=False):
     r'''
     Calls SIR_homogeneous_pairwise after calculating S0, I0, R0, SI0, SS0, n, 
@@ -2289,8 +2289,8 @@ def SIR_homogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is not None and initial_recovereds is not None:
         raise EoN.EoNError("cannot define both initial_recovereds and rho")
-    
-    
+
+
     Pk = get_Pk(G)
     n = sum(k*Pk[k] for k in Pk.keys())
     N=G.order()
@@ -2337,7 +2337,7 @@ def _dSIS_heterogeneous_meanfield_(X, t, kcount, tau, gamma):
     Idot = tau*ks*S*pi_I - gamma*I
     dX = np.concatenate((Sdot,Idot), axis=0)
     return dX
-    
+
 def _dSIR_heterogeneous_meanfield_(X, t, S0, Nk, tau, gamma):
     theta = X[0]
     Rk = np.array(X[1:])
@@ -2354,7 +2354,7 @@ def _dSIR_heterogeneous_meanfield_(X, t, S0, Nk, tau, gamma):
 
 
 
-def SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmin = 0, tmax=100, 
+def SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmin = 0, tmax=100,
                                 tcount=1001, return_full_data=False):
     '''Encodes System (5.10) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -2380,9 +2380,9 @@ def SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmin = 0, tmax=100,
     Ik0 is similar to Sk0.
 
 
-    [\dot{S}_k] = \gamma [I_k] - \tau k [S_k] \pi_I
-    [\dot{I}_k] = -(above)
-    \pi_I = \sum_k k [I_k] / \sum_k  k [N_k]
+    [\\dot{S}_k] = \\gamma [I_k] - \tau k [S_k] \\pi_I
+    [\\dot{I}_k] = -(above)
+    \\pi_I = \\sum_k k [I_k] / \\sum_k  k [N_k]
 
 
 
@@ -2432,11 +2432,11 @@ def SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmin = 0, tmax=100,
     Ik0 = np.array(Ik0)
 
     kcount = len(Sk0)
-    
+
     X0 = np.concatenate((Sk0,Ik0), axis=0)
     Nk = Sk0+Ik0
     times = np.linspace(tmin, tmax, tcount)
-    X = integrate.odeint(_dSIS_heterogeneous_meanfield_, X0, times, 
+    X = integrate.odeint(_dSIS_heterogeneous_meanfield_, X0, times,
                             args=(kcount,tau,gamma))
     Sk = np.array(X.T[:kcount])
     Ik = np.array(X.T[kcount:])
@@ -2446,11 +2446,11 @@ def SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmin = 0, tmax=100,
         return times, S, I, Sk, Ik
     else:
         return times, S, I
-	
-    
-def SIR_heterogeneous_meanfield(Sk0, Ik0, Rk0, tau, gamma, tmin = 0, tmax=100, 
+
+
+def SIR_heterogeneous_meanfield(Sk0, Ik0, Rk0, tau, gamma, tmin = 0, tmax=100,
                                     tcount=1001, return_full_data=False):
-    '''
+    r'''
     Encodes System (5.11) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
@@ -2523,9 +2523,9 @@ def SIR_heterogeneous_meanfield(Sk0, Ik0, Rk0, tau, gamma, tmin = 0, tmax=100,
     Nk = Sk0+Ik0 +Rk0
     X0 = np.concatenate(([theta0],Rk0), axis=0)
     times = np.linspace(tmin, tmax, tcount)
-    X = integrate.odeint(_dSIR_heterogeneous_meanfield_, X0, times, 
+    X = integrate.odeint(_dSIR_heterogeneous_meanfield_, X0, times,
                             args = (Sk0, Nk, tau, gamma))
-    
+
     theta = X.T[0]
     Rk = X.T[1:]
     ks = np.arange(len(Rk))
@@ -2536,9 +2536,9 @@ def SIR_heterogeneous_meanfield(Sk0, Ik0, Rk0, tau, gamma, tmin = 0, tmax=100,
         return times, sum(Sk), sum(Ik), sum(Rk)
     else:
         return times, Sk, Ik, Rk
-    
-def SIS_heterogeneous_meanfield_from_graph(G, tau, gamma,  initial_infecteds=None, 
-                                            rho = None, tmin = 0, tmax=100, 
+
+def SIS_heterogeneous_meanfield_from_graph(G, tau, gamma,  initial_infecteds=None,
+                                            rho = None, tmin = 0, tmax=100,
                                             tcount=1001, return_full_data=False):
     r'''
     Calls SIS_heterogeneous_meanfield after calculating Sk0, Ik0 based on 
@@ -2596,12 +2596,12 @@ def SIS_heterogeneous_meanfield_from_graph(G, tau, gamma,  initial_infecteds=Non
 
     Nk, Sk0, Ik0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds,
                                             rho=rho, SIR=False)
-    
+
     return SIS_heterogeneous_meanfield(Sk0, Ik0, tau, gamma, tmin, tmax, tcount, return_full_data)
 
-def SIR_heterogeneous_meanfield_from_graph(G, tau, gamma,  initial_infecteds=None, 
-                                            initial_recovereds = None, rho = None, 
-                                            tmin = 0, tmax=100, tcount=1001, 
+def SIR_heterogeneous_meanfield_from_graph(G, tau, gamma,  initial_infecteds=None,
+                                            initial_recovereds = None, rho = None,
+                                            tmin = 0, tmax=100, tcount=1001,
                                             return_full_data=False):
     r'''
     Calls SIR_heterogeneous_meanfield after calculating Sk0, Ik0, Rk0 based
@@ -2660,18 +2660,18 @@ def SIR_heterogeneous_meanfield_from_graph(G, tau, gamma,  initial_infecteds=Non
                                                                 tmax = 10)
     
     '''
-    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, 
-                                                initial_infecteds = initial_infecteds, 
+    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G,
+                                                initial_infecteds = initial_infecteds,
                                                 initial_recovereds = initial_recovereds,
                                                 rho=rho, SIR=True)
-    
-    return SIR_heterogeneous_meanfield(Sk0, Ik0, Rk0, tau, gamma, tmin, tmax, 
+
+    return SIR_heterogeneous_meanfield(Sk0, Ik0, Rk0, tau, gamma, tmin, tmax,
                                         tcount, return_full_data=False)
 
 
 #######      HETEROGENEOUS PAIRWISE
 def _dSIS_heterogeneous_pairwise_(X, t, Nk, NkNl, tau, gamma, Ks):
-    '''
+    r'''
     Gives the derivatives
 
 
@@ -2728,15 +2728,15 @@ def _dSIS_heterogeneous_pairwise_(X, t, Nk, NkNl, tau, gamma, Ks):
     tmpSk = 1.*Sk #the 1.* is to make it a copy, not the same object
     kxSk = Ks*tmpSk  # k [S_k]
     lxSl = Ls*tmpSk  # l [S_l]
-    
+
     kxSk[kxSk==0] = 1#avoid division by 0. This is okay since those places
     lxSl[lxSl==0] = 1#where it is 0 will have 0 numerator, and the whole
                      #expression should evaluate to 0.
     SkSlI = SkSl * ((Ls-1))*SlI/ (lxSl)
     ISkIl = (ISk * ((Ks-1))*SkIl.T/ (kxSk)).T
-    ISkSl = SkSlI.T 
-    IkSlI = ISkIl.T 
-    
+    ISkSl = SkSlI.T
+    IkSlI = ISkIl.T
+
     dSk = gamma*Ik - tau *SkI
     dSkSl = gamma*(SkIl + IkSl) - tau*(SkSlI + ISkSl)
     dSkIl = gamma*(IkIl-SkIl) + tau*(SkSlI - ISkIl - SkIl)
@@ -2767,20 +2767,20 @@ def _dSIR_heterogeneous_pairwise_(X, t, tau, gamma, Nk, Ks):
     #the denominator becomes zero, but in those places the numerator
     #also becomes zero in such a way that the ratio should be 0.
     #making the terms in the denominator become 1 make the division go okay.
-    
+
     tmpSk = 1.*Sk #the 1.* is to make it a copy, not the same object
-    tmpSk[tmpSk==0] = 1  
+    tmpSk[tmpSk==0] = 1
     tmpSl = tmpSk
-    
+
     tmpKs = 1.*Ks
     tmpKs[tmpKs==0] = 1
     tmpLs = tmpKs
 
-    
+
     SkSlI = SkSl * ((Ls-1))*SlI/ (tmpLs*tmpSl)
     ISkIl = (ISk * ((Ks-1))*SkIl.T/ (tmpKs*tmpSk)).T
-    ISkSl = SkSlI.T 
-    IkSlI = ISkIl.T 
+    ISkSl = SkSlI.T
+    IkSlI = ISkIl.T
 
     dSk = -tau*SkI
     dIk = tau*SkI - gamma*Ik
@@ -2790,16 +2790,16 @@ def _dSIR_heterogeneous_pairwise_(X, t, tau, gamma, Nk, Ks):
     dSkIl.shape=(kcount**2,1)
     dSkSl.shape = (kcount**2,1)
 
-    dX = np.concatenate((dSk[:,None], dIk[:,None], 
+    dX = np.concatenate((dSk[:,None], dIk[:,None],
                                 dSkSl, dSkIl),axis=0).T[0]
     return dX
 
 
 
-def SIS_heterogeneous_pairwise(Sk0, Ik0, SkSl0, SkIl0, IkIl0, tau, gamma, 
-                                tmin = 0, tmax=100, tcount=1001, 
+def SIS_heterogeneous_pairwise(Sk0, Ik0, SkSl0, SkIl0, IkIl0, tau, gamma,
+                                tmin = 0, tmax=100, tcount=1001,
                                 return_full_data = False, Ks = None):
-                                
+
     r'''Encodes System (5.13) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
@@ -2916,7 +2916,7 @@ def SIS_heterogeneous_pairwise(Sk0, Ik0, SkSl0, SkIl0, IkIl0, tau, gamma,
 
     X0 = np.concatenate((Sk0[:,None], SkSl0, SkIl0), axis=0).T[0]
 
-    X = _my_odeint_(_dSIS_heterogeneous_pairwise_, X0, times, 
+    X = _my_odeint_(_dSIS_heterogeneous_pairwise_, X0, times,
                     args = (Nk, NkNl, tau, gamma, Ks))
 
     kcount = len(Nk)
@@ -2936,10 +2936,10 @@ def SIS_heterogeneous_pairwise(Sk0, Ik0, SkSl0, SkIl0, IkIl0, tau, gamma,
     else:
         return times, S, I
 
-def SIR_heterogeneous_pairwise(Sk0, Ik0, Rk0, SkSl0, SkIl0, tau, gamma, 
-                                tmin = 0, tmax=100, tcount=1001, 
+def SIR_heterogeneous_pairwise(Sk0, Ik0, Rk0, SkSl0, SkIl0, tau, gamma,
+                                tmin = 0, tmax=100, tcount=1001,
                                 return_full_data=False, Ks = None):
-    '''Encodes System (5.15) of Kiss, Miller, & Simon.  Please cite the
+    r'''Encodes System (5.15) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
     In the text this is often referred to as the 
@@ -3020,7 +3020,7 @@ def SIR_heterogeneous_pairwise(Sk0, Ik0, Rk0, SkSl0, SkIl0, tau, gamma,
         import EoN
         
 '''
-    
+
     if Ks is None:
         Ks = np.array(range(len(Sk0)))
 #    print "Ks is ", Ks
@@ -3031,9 +3031,9 @@ def SIR_heterogeneous_pairwise(Sk0, Ik0, Rk0, SkSl0, SkIl0, tau, gamma,
     SkSl0.shape = (kcount**2,1)
     SkIl0.shape = (kcount**2,1)
 
-    X0 = np.concatenate((Sk0[:,None], Ik0[:,None], SkSl0, SkIl0), 
+    X0 = np.concatenate((Sk0[:,None], Ik0[:,None], SkSl0, SkIl0),
                                 axis=0).T[0]
-    X = integrate.odeint(_dSIR_heterogeneous_pairwise_, X0, times, 
+    X = integrate.odeint(_dSIR_heterogeneous_pairwise_, X0, times,
                             args = (tau, gamma, Nk, Ks))
 
     Sk = X.T[:kcount]
@@ -3045,7 +3045,7 @@ def SIR_heterogeneous_pairwise(Sk0, Ik0, Rk0, SkSl0, SkIl0, tau, gamma,
 
     Rk = Nk[:,None] - Sk - Ik
     R = Rk.sum(axis=0)
-    
+
     if return_full_data:
         SkIl.shape = (kcount,kcount,tcount)
         SkSl.shape = (kcount,kcount,tcount)
@@ -3055,8 +3055,8 @@ def SIR_heterogeneous_pairwise(Sk0, Ik0, Rk0, SkSl0, SkIl0, tau, gamma,
 
 
 def SIS_heterogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds = None,
-                                            rho = None, tmin = 0, 
-                                            tmax=100, tcount=1001, 
+                                            rho = None, tmin = 0,
+                                            tmax=100, tcount=1001,
                                             return_full_data = False):
     r'''
     Calls SIS_heterogeneous_pairwise after calculating Sk0, Ik0, SkSl0, SkIl0, IkIl0
@@ -3120,7 +3120,7 @@ def SIS_heterogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds = Non
         not been able to find a way around it.
     
     '''
-    
+
     Nk, Sk0, Ik0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds = initial_infecteds,
                                             rho=rho, SIR=False)
 
@@ -3130,15 +3130,15 @@ def SIS_heterogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds = Non
 
     Sk0 = np.array([Sk0[k] for k in Ks])
     Ik0 = np.array([Ik0[k] for k in Ks])
-    return SIS_heterogeneous_pairwise(Sk0, Ik0, SkSl0, SkIl0, IkIl0, tau, 
-                                        gamma, tmin, tmax, tcount, 
-                                        return_full_data, 
+    return SIS_heterogeneous_pairwise(Sk0, Ik0, SkSl0, SkIl0, IkIl0, tau,
+                                        gamma, tmin, tmax, tcount,
+                                        return_full_data,
                                         Ks = np.array(Ks))
 
-    
-def SIR_heterogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, 
-                                        initial_recovereds = None, rho = None, tmin=0, 
-                                            tmax=100, tcount = 1001, 
+
+def SIR_heterogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
+                                        initial_recovereds = None, rho = None, tmin=0,
+                                            tmax=100, tcount = 1001,
                                             return_full_data=False):
     r'''Calls SIR_heterogeneous_pairwise after calculating Sk0, Ik0, Rk0, SkSl0, SkIl0
     from a graph G and initial fraction infected rho. 
@@ -3191,11 +3191,11 @@ def SIR_heterogeneous_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
         not been able to find a way around it.
 
     '''
-    
-    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds, 
+
+    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds,
                                         initial_recovereds = initial_recovereds, rho=rho, SIR=True)
-    NkNl, SkSl0, SkIl0, Ks = _get_NkNl_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds, 
-                                        initial_recovereds = initial_recovereds, rho=rho, withKs = True, 
+    NkNl, SkSl0, SkIl0, Ks = _get_NkNl_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds,
+                                        initial_recovereds = initial_recovereds, rho=rho, withKs = True,
                                                         SIR = True)
 
     Sk0 = np.array([Sk0[k] for k in Ks])
@@ -3237,17 +3237,17 @@ def _dSIR_compact_pairwise_(X, t, N, tau, gamma):
     SX = ks.dot(Sk)
     Q = (ks*(ks-1)).dot(Sk)/SX**2
     I = N - sum(Sk) - R
-    
+
     dSk = -tau * ks * Sk *SI/SX
     dSS = -2*tau*SS*SI*Q
     dSI = -gamma*SI + tau*(SS-SI)*SI*Q-tau*SI
     dR = gamma*I
 
     dX = np.concatenate((dSk, [dSS,dSI,dR]),axis=0)
-    return dX 
+    return dX
 
 
-def SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin = 0, 
+def SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin = 0,
                             tmax=100, tcount=1001, return_full_data=False):
     '''Encodes system (5.18) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -3319,7 +3319,7 @@ def SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin = 0,
     twoM = SS0+II0+2*SI0 #each of the M edges counted twice
     times = np.linspace(tmin,tmax,tcount)
     X0 = np.concatenate((Sk0, [SI0,SS0]), axis=0)
-    X = integrate.odeint(_dSIS_compact_pairwise_, X0, times, 
+    X = integrate.odeint(_dSIS_compact_pairwise_, X0, times,
                             args = (Nk, twoM, tau, gamma))
 
     Sk = X.T[:-2]
@@ -3397,11 +3397,11 @@ def SIR_compact_pairwise(Sk0, I0, R0, SS0, SI0, tau, gamma, tmin=0, tmax=100,
         import networkx as nx
         import EoN
     '''
-    
+
     times = np.linspace(tmin,tmax,tcount)
     N = I0+R0+sum(Sk0)
     X0 = np.concatenate((Sk0, [SS0, SI0, R0]), axis=0)
-    X = integrate.odeint(_dSIR_compact_pairwise_, X0, times, 
+    X = integrate.odeint(_dSIR_compact_pairwise_, X0, times,
                             args = (N, tau, gamma))
     SI, SS, R = X.T[-3:]
     Sk = X.T[:-3]
@@ -3413,8 +3413,8 @@ def SIR_compact_pairwise(Sk0, I0, R0, SS0, SI0, tau, gamma, tmin=0, tmax=100,
         return times, S, I, R
 
 
-def SIS_compact_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, rho = None, tmin = 0, 
-                                    tmax=100, tcount=1001, 
+def SIS_compact_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, rho = None, tmin = 0,
+                                    tmax=100, tcount=1001,
                                     return_full_data=False):
     r'''Calls SIS_compact_pairwise after calculating Sk0, Ik0, SI0, SS0, II0
     from the graph G and initial fraction infected rho.
@@ -3457,27 +3457,27 @@ def SIS_compact_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, rho =
         return **times, S, I**
     
     '''
-    
+
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is None and initial_infecteds is None:
         rho = 1./G.order()
 
     Nk, Sk0, Ik0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds, rho=rho, SIR=False)
-    
+
     if initial_infecteds is not None:
-        SS0, SI0, II0 = _count_edge_types_(G, initial_infecteds, SIR=False)   
+        SS0, SI0, II0 = _count_edge_types_(G, initial_infecteds, SIR=False)
     else:
         maxk = max(dict(G.degree()).values())
         SS0 = sum(Nk[k]*k*(1-rho)*(1-rho) for k in range(maxk+1))
         SI0 = sum(Nk[k]*k*(1-rho)*rho for k in range(maxk+1))
         II0 = sum(Nk[k]*k*rho*rho for k in range(maxk+1))
-    return SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin, 
+    return SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin,
                                     tmax, tcount, return_full_data)
 
-    
-def SIR_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None, 
-                                    initial_recovereds = None, rho = None, 
+
+def SIR_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None,
+                                    initial_recovereds = None, rho = None,
                                     tmin = 0, tmax=100, tcount=1001,
                                     return_full_data=False):
     r'''Calls SIR_compact_pairwise after calculating Sk0, I0, R0, SS0, SI0
@@ -3523,30 +3523,30 @@ def SIR_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None,
     else:
        **times, S, I, R**
     '''
-    
+
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is None and initial_infecteds is None:
         rho = 1./G.order()
 
-    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds, 
-                                                initial_recovereds=initial_recovereds, 
+    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds=initial_infecteds,
+                                                initial_recovereds=initial_recovereds,
                                                 rho=rho, SIR=True)
-    
+
     I0 = sum(Ik0)
     R0 = sum(Rk0)
 
 
     if initial_infecteds is not None:
-        SS0, SI0 = _count_edge_types_(G, initial_infecteds, initial_recovereds, SIR=True)   
-    else: 
+        SS0, SI0 = _count_edge_types_(G, initial_infecteds, initial_recovereds, SIR=True)
+    else:
         ks = np.array(range(len(Nk))) #[0,1,2,3,...,k]
         SX0 = np.dot(Sk0,ks)
         SS0 = (1-rho)*SX0
         SI0 = rho*SX0
-    
+
     return SIR_compact_pairwise(Sk0, I0, R0, SS0, SI0, tau, gamma, tmin=tmin,
-                                tmax=tmax, tcount=tcount, 
+                                tmax=tmax, tcount=tcount,
                                 return_full_data=return_full_data)
 
 
@@ -3554,9 +3554,9 @@ def SIR_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None,
 
 #######SUPER COMPACT PAIRWISE
 
-def _dSIS_super_compact_pairwise_(X, t, tau, gamma, N, k_ave, ksquare_ave, 
+def _dSIS_super_compact_pairwise_(X, t, tau, gamma, N, k_ave, ksquare_ave,
                                     kcube_ave):
-    '''    
+    r'''    
     [\dot{I}] = tau [SI] - gamma [I]
     [\dot{SS}] = 2 gamma [SI] - 2 tau [SI] [SS] Q
     [\dot{SI}] = gamma ([II]-[SI]) + tau [SI] ([SS]-[SI])Q - tau [SI]
@@ -3571,9 +3571,9 @@ def _dSIS_super_compact_pairwise_(X, t, tau, gamma, N, k_ave, ksquare_ave,
 
     I, SS, SI, II = X
     S = N-I
-    
+
     n_S = (SS+SI)/(S)
-    
+
     Q = ((ksquare_ave*(ksquare_ave-n_S*k_ave) \
             + kcube_ave*(n_S-k_ave))/(n_S*(ksquare_ave-k_ave**2))-1)/(S*n_S)
     dIdt = tau*SI - gamma*I
@@ -3584,7 +3584,7 @@ def _dSIS_super_compact_pairwise_(X, t, tau, gamma, N, k_ave, ksquare_ave,
     dX = np.array([dIdt, dSSdt, dSIdt, dIIdt])
     return dX
 
-def _dSIR_super_compact_pairwise_(X, t, tau, gamma, psihat, psihatPrime, 
+def _dSIR_super_compact_pairwise_(X, t, tau, gamma, psihat, psihatPrime,
                                     psihatDPrime, N):
     theta = X[0]
     SS = X[1]
@@ -3603,8 +3603,8 @@ def _dSIR_super_compact_pairwise_(X, t, tau, gamma, psihat, psihatPrime,
     return dX
 
 
-def SIS_super_compact_pairwise(S0, I0, SS0, SI0, II0, tau, gamma, k_ave, 
-                                ksquare_ave, kcube_ave, tmin = 0, tmax=100, 
+def SIS_super_compact_pairwise(S0, I0, SS0, SI0, II0, tau, gamma, k_ave,
+                                ksquare_ave, kcube_ave, tmin = 0, tmax=100,
                                 tcount=1001, return_full_data=False):
     '''
     Encodes system (5.20) of Kiss, Miller, & Simon.  Please cite the 
@@ -3660,8 +3660,8 @@ def SIS_super_compact_pairwise(S0, I0, SS0, SI0, II0, tau, gamma, k_ave,
     X0 = [I0, SS0, SI0, II0]
     N = S0+I0
     times = np.linspace(tmin,tmax,tcount)
-    X = integrate.odeint(_dSIS_super_compact_pairwise_, X0, times, 
-                            args = (tau, gamma, N, k_ave, ksquare_ave, 
+    X = integrate.odeint(_dSIS_super_compact_pairwise_, X0, times,
+                            args = (tau, gamma, N, k_ave, ksquare_ave,
                                     kcube_ave))
     I, SS, SI, II = X.T
     S = N-I
@@ -3672,11 +3672,11 @@ def SIS_super_compact_pairwise(S0, I0, SS0, SI0, II0, tau, gamma, k_ave,
 
 
 
-def SIR_super_compact_pairwise(R0, SS0, SI0,  N, tau, gamma, psihat, 
-                                psihatPrime, psihatDPrime, tmin = 0, 
-                                tmax = 100, tcount = 1001, 
+def SIR_super_compact_pairwise(R0, SS0, SI0,  N, tau, gamma, psihat,
+                                psihatPrime, psihatDPrime, tmin = 0,
+                                tmax = 100, tcount = 1001,
                                 return_full_data = False):
-    '''
+    r'''
     Encodes system (5.22) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
@@ -3727,8 +3727,8 @@ def SIR_super_compact_pairwise(R0, SS0, SI0,  N, tau, gamma, psihat,
 '''
     times = np.linspace(tmin,tmax,tcount)
     X0 = np.array([1., SS0, SI0, R0])
-    X = integrate.odeint(_dSIR_super_compact_pairwise_, X0, times, 
-                            args = (tau, gamma, psihat, psihatPrime, 
+    X = integrate.odeint(_dSIR_super_compact_pairwise_, X0, times,
+                            args = (tau, gamma, psihat, psihatPrime,
                                     psihatDPrime, N))
     theta, SS, SI, R = X.T
     S = N*psihat(theta)
@@ -3738,17 +3738,17 @@ def SIR_super_compact_pairwise(R0, SS0, SI0,  N, tau, gamma, psihat,
     else:
         return times, S, I, R
 
-def SIS_super_compact_pairwise_from_graph(G, tau, gamma, initial_infecteds=None, 
+def SIS_super_compact_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
                                             rho = None, tmin = 0,
-                                            tmax=100, tcount=1001, 
+                                            tmax=100, tcount=1001,
                                             return_full_data=False):
     r'''Calls SIS_super_compact_pairwise after calculating S0, I0, SS0, SI0, II0
     from the graph G and initial fraction infected rho'''
 
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
-    
-    Nk, Sk0, Ik0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds = initial_infecteds, 
+
+    Nk, Sk0, Ik0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds = initial_infecteds,
                                             rho=rho, SIR=False)
 
     ks = np.array(range(len(Nk))) #[0,1,2,3,...,k]
@@ -3757,32 +3757,32 @@ def SIS_super_compact_pairwise_from_graph(G, tau, gamma, initial_infecteds=None,
     I0 = sum(Ik0)
 
     if initial_infecteds is not None:
-        SS0, SI0, II0 = _count_edge_types_(G, initial_infecteds, SIR=False)   
-    else:    
+        SS0, SI0, II0 = _count_edge_types_(G, initial_infecteds, SIR=False)
+    else:
         if rho is None:
             rho = 1./G.order()
-    
+
 
         SX0 = np.dot(Sk0,ks)
         SS0 = (1-rho)*SX0
         SI0 = rho*SX0
         II0 = np.dot(Nk,ks)-SX0
-        
+
     Pk = get_Pk(G)
     Pks = np.array([Pk.get(k,0) for k in ks])
     k_ave = np.dot(Pks, ks)
     ksquare_ave = np.dot(Pks, ks*ks)
     kcube_ave = np.dot(Pks, ks*ks*ks)
-    
-    return SIS_super_compact_pairwise(S0, I0, SS0, SI0, II0, tau, gamma, 
-                                        k_ave, ksquare_ave, kcube_ave, 
-                                        tmin=tmin, tmax=tmax, tcount=tcount, 
+
+    return SIS_super_compact_pairwise(S0, I0, SS0, SI0, II0, tau, gamma,
+                                        k_ave, ksquare_ave, kcube_ave,
+                                        tmin=tmin, tmax=tmax, tcount=tcount,
                                         return_full_data=return_full_data)
 
-def SIR_super_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None, 
-                                            initial_recovereds = None, 
+def SIR_super_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None,
+                                            initial_recovereds = None,
                                             rho = None, tmin = 0,
-                                            tmax=100, tcount=1001, 
+                                            tmax=100, tcount=1001,
                                             return_full_data=False):
     r'''Calls SIR_super_compact_pairwise after calculating R0, SS0, SI0
     from the graph G and initial fraction infected rho
@@ -3831,19 +3831,19 @@ def SIR_super_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is None and initial_infecteds is None:
         rho = 1./G.order()
-    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds = initial_infecteds, 
+    Nk, Sk0, Ik0, Rk0 = _get_Nk_and_IC_as_arrays_(G, initial_infecteds = initial_infecteds,
                                                 initial_recovereds = initial_recovereds,
                                                 rho=rho, SIR=True)
 
     Pk = get_Pk(G)
-    
+
     N = G.order()
-    
+
     R0 = sum(Rk0)
 
     if initial_infecteds is not None:
         SS0, SI0 = _count_edge_types_(G, initial_infecteds, initial_recovereds, SIR=True)
-        def psihat(x): #probably faster if vectorized, 
+        def psihat(x): #probably faster if vectorized,
                    #but need to be careful with broadcasting...
             return sum((Sk0[k]*(x**k)) for k in Pk)/N
         def psihatPrime(x):
@@ -3851,14 +3851,14 @@ def SIR_super_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None
         def psihatDPrime(x):
             return sum(k*(k-1)*Sk0[k]*x**(k-2) for k in Pk)/N
 
-    else:       
+    else:
         ks = np.array(range(len(Nk))) #[0,1,2,3,...,k]
         SX0 = np.dot(Sk0,ks)
         SS0 = (1-rho)*SX0
         SI0 = rho*SX0
 
-        
-        def psihat(x): #probably faster if vectorized, 
+
+        def psihat(x): #probably faster if vectorized,
                    #but need to be careful with broadcasting...
             return (1-rho)*sum(Pk[k]*x**k for k in Pk)
         def psihatPrime(x):
@@ -3866,10 +3866,10 @@ def SIR_super_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None
         def psihatDPrime(x):
             return (1-rho)*sum(k*(k-1)*Pk[k]*x**(k-2) for k in Pk)
 
-    return  SIR_super_compact_pairwise(R0, SS0, SI0, N, tau, gamma, psihat, 
-                                        psihatPrime, psihatDPrime, 
-                                        tmin = tmin, tmax = tmax, 
-                                        tcount = tcount, 
+    return  SIR_super_compact_pairwise(R0, SS0, SI0, N, tau, gamma, psihat,
+                                        psihatPrime, psihatDPrime,
+                                        tmin = tmin, tmax = tmax,
+                                        tcount = tcount,
                                         return_full_data = return_full_data)
 
 
@@ -3881,7 +3881,7 @@ def SIR_super_compact_pairwise_from_graph(G, tau, gamma,  initial_infecteds=None
 
 
 def _dSIS_effective_degree_(X, t, original_shape, tau, gamma):
-    '''
+    r'''
     \dot{S}_{s,i} = - tau i S_{s,i} + gamma*I_{s,i}
                     + gamma((i+1)S_{s-1,i+1}-iS_{s,i})
                     + tau[ISS]((s+1)S_{s+1,i-1} - sS_{s,i})/[SS]
@@ -3892,7 +3892,7 @@ def _dSIS_effective_degree_(X, t, original_shape, tau, gamma):
     S = sum S_{s,i}
     I = sum I_{s,i}
     '''
-    #note that dSIR_effective_degree has some commands for vectorizing 
+    #note that dSIR_effective_degree has some commands for vectorizing
     #tentatively coded (and commented out)
     ksq = original_shape[0]*original_shape[1]
     Ssi = X[:ksq]
@@ -3900,20 +3900,20 @@ def _dSIS_effective_degree_(X, t, original_shape, tau, gamma):
     Ssi.shape = original_shape
     Isi.shape = original_shape
 
-    ISS = sum([sum([i*s*Ssi[s,i] for i in range(original_shape[1])]) 
+    ISS = sum([sum([i*s*Ssi[s,i] for i in range(original_shape[1])])
                 for s in range(original_shape[0])])
-    SS = sum([sum([s*Ssi[s,i] for i in range(original_shape[1])]) 
+    SS = sum([sum([s*Ssi[s,i] for i in range(original_shape[1])])
                 for s in range(original_shape[0])])
-    ISI = sum([sum([i*(i-1)*Ssi[s,i] for i in range(original_shape[1])]) 
+    ISI = sum([sum([i*(i-1)*Ssi[s,i] for i in range(original_shape[1])])
                 for s in range(original_shape[0])])
-    SI = sum([sum([i*Ssi[s,i] for i in range(original_shape[1])]) 
+    SI = sum([sum([i*Ssi[s,i] for i in range(original_shape[1])])
                 for s in range(original_shape[0])])
 
     g1 = np.zeros(original_shape)
     g2 = np.zeros(original_shape)
     t1 = np.zeros(original_shape)
     t2 = np.zeros(original_shape)
-    
+
     dSsi = np.zeros(original_shape)
     dIsi = np.zeros(original_shape)
     for s in range(original_shape[0]):
@@ -3930,13 +3930,13 @@ def _dSIS_effective_degree_(X, t, original_shape, tau, gamma):
             else:
                 Ssp1im1 = Ssi[s+1,i-1]
                 Isp1im1 = Isi[s+1,i-1]
-            
+
             dSsi[s,i] = -tau*i*Ssi[s,i] + gamma*Isi[s,i] \
                         + gamma*((i+1)*Ssm1ip1 - i*Ssi[s,i]) \
                         + tau*ISS*((s+1)*Ssp1im1 - s*Ssi[s,i])/SS
             dIsi[s,i] =  tau*i*Ssi[s,i] - gamma*Isi[s,i] \
                         + gamma*((i+1)*Ism1ip1 - i*Isi[s,i]) \
-                        + tau*(ISI/SI + 1)*((s+1)*Isp1im1 - s*Isi[s,i])# 
+                        + tau*(ISI/SI + 1)*((s+1)*Isp1im1 - s*Isi[s,i])#
 
     dSsi.shape = (original_shape[0]*original_shape[1])
     dIsi.shape = (original_shape[0]*original_shape[1])
@@ -3949,14 +3949,14 @@ def _dSIR_effective_degree_(X, t, N, original_shape, tau, gamma):
     R = X[-1]
     Ssi = X[:-1]
     Ssi.shape=original_shape
-    ISS = sum([sum([i*s*Ssi[s,i] for i in range(original_shape[1])]) 
+    ISS = sum([sum([i*s*Ssi[s,i] for i in range(original_shape[1])])
                 for s in range(original_shape[0])])
-    SS = sum([sum([s*Ssi[s,i] for i in range(original_shape[1])]) 
+    SS = sum([sum([s*Ssi[s,i] for i in range(original_shape[1])])
                 for s in range(original_shape[0])])
-    
-    #commenting out commands for vectorizing this.  
+
+    #commenting out commands for vectorizing this.
     #I should do this eventually, but not now.  Apply to SIS version as well.
-    #ultimately I think right option is to pad with zeros and then 
+    #ultimately I think right option is to pad with zeros and then
     #cut out appropriate section.
     #ivec = np.array(range(original_shape[1]))
     #ivec.shape = (1,original_shape[1])
@@ -3964,12 +3964,12 @@ def _dSIR_effective_degree_(X, t, N, original_shape, tau, gamma):
     #svec.shape = (original_shape[0],1)
     #
     #Ssip1 = Ssi[:,1:]
-    #np.pad(Ssip1, pad_width=((0,0),(0,1)), mode = 'constant', 
+    #np.pad(Ssip1, pad_width=((0,0),(0,1)), mode = 'constant',
     #          constant_values=0)
     #Ssp1im1 = Ssi[1:,:-1]
-    #np.pad(Ssp1im1, pad_width=((0,1),(1,0)), mode = 'constant', 
+    #np.pad(Ssp1im1, pad_width=((0,1),(1,0)), mode = 'constant',
     #           constant_values=0)
-    #dSsi = - tau* ivec*Ssi + gamma*((ivec+1)*Ssip1 - i*Ssi) 
+    #dSsi = - tau* ivec*Ssi + gamma*((ivec+1)*Ssip1 - i*Ssi)
     #       + tau *ISS*((svec+1)*Sp1im1 - svec*Ssi)/SS
 
     dSsi = np.zeros(original_shape)
@@ -3982,10 +3982,10 @@ def _dSIR_effective_degree_(X, t, N, original_shape, tau, gamma):
             if s+1 == original_shape[0] or i == 0:
                 Ssp1im1=0
             else:
-                Ssp1im1 = Ssi[s+1,i-1]    
+                Ssp1im1 = Ssi[s+1,i-1]
             dSsi[s,i] = -tau*i*Ssi[s,i] + gamma*((i+1)*Ssip1 - i*Ssi[s,i]) \
                         + tau*ISS*((s+1)*Ssp1im1 - s*Ssi[s,i])/SS
-    S = Ssi.sum() 
+    S = Ssi.sum()
     I = N-S-R
     dR = gamma*I
 
@@ -3995,7 +3995,7 @@ def _dSIR_effective_degree_(X, t, N, original_shape, tau, gamma):
 
 
 
-def SIS_effective_degree(Ssi0, Isi0, tau, gamma, tmin = 0, tmax=100, 
+def SIS_effective_degree(Ssi0, Isi0, tau, gamma, tmin = 0, tmax=100,
                             tcount=1001, return_full_data=False):
     '''Encodes system (5.36) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -4032,14 +4032,14 @@ def SIS_effective_degree(Ssi0, Isi0, tau, gamma, tmin = 0, tmax=100,
         return times, S, I
     
     '''
-    times = np.linspace(tmin,tmax,tcount) 
+    times = np.linspace(tmin,tmax,tcount)
     original_shape = Ssi0.shape
     ksq = original_shape[0]*original_shape[1]
     Ssi0.shape = (1,ksq)
     Isi0.shape = (1,ksq)
-    
+
     X0= np.concatenate((Ssi0[0], Isi0[0]), axis=0)
-    X = integrate.odeint(_dSIS_effective_degree_, X0, times, 
+    X = integrate.odeint(_dSIS_effective_degree_, X0, times,
                             args = (original_shape, tau, gamma))
     Ssi = X.T[0:ksq]
     Isi = X.T[ksq:]
@@ -4052,9 +4052,9 @@ def SIS_effective_degree(Ssi0, Isi0, tau, gamma, tmin = 0, tmax=100,
     else:
         return times, S, I
 
-def SIR_effective_degree(S_si0, I0, R0, tau, gamma, tmin=0, tmax=100, 
+def SIR_effective_degree(S_si0, I0, R0, tau, gamma, tmin=0, tmax=100,
                             tcount=1001, return_full_data=False):
-    '''Encodes system (5.38) of Kiss, Miller, & Simon.  Please cite the
+    r'''Encodes system (5.38) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
     \dot{S}_{s,i} = - tau i S_{s,i}  + gamma((i+1)S_{s,i+1} - i S_{s,i})
@@ -4110,12 +4110,12 @@ def SIR_effective_degree(S_si0, I0, R0, tau, gamma, tmin=0, tmax=100,
     times = np.linspace(tmin,tmax, tcount)
     N = S_si0.sum()+I0+R0
     original_shape = S_si0.shape
-    S_si0.shape = (original_shape[0]*original_shape[1]) 
+    S_si0.shape = (original_shape[0]*original_shape[1])
     #note this makes it array([[values...]])
     R0=np.array([R0])
     R0.shape=(1)
     X0 = np.concatenate((S_si0, R0), axis=0)
-    X = integrate.odeint(_dSIR_effective_degree_, X0, times, 
+    X = integrate.odeint(_dSIR_effective_degree_, X0, times,
                             args = (N, original_shape, tau, gamma))
 
     R = X.T[-1]
@@ -4129,11 +4129,11 @@ def SIR_effective_degree(S_si0, I0, R0, tau, gamma, tmin=0, tmax=100,
         return times, S, I, R
 
 
-def SIS_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None, 
-                                    rho = None, tmin = 0, 
-                                    tmax=100, tcount=1001, 
+def SIS_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
+                                    rho = None, tmin = 0,
+                                    tmax=100, tcount=1001,
                                     return_full_data=False):
-                                    
+
 
     r'''Calls SIS_effective_degree after calculating Ssi0, Isi0 from
     the graph G and initialf fraction infected rho.
@@ -4153,7 +4153,7 @@ def SIS_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
 
     Nk = Counter(dict(G.degree()).values())
     maxk = max(Nk.keys())
-    
+
 
     S_si0 = np.zeros((maxk+1,maxk+1))
     I_si0 = np.zeros((maxk+1,maxk+1))
@@ -4167,10 +4167,10 @@ def SIS_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
                 S_si0[s][i] += 1
             else:
                 I_si0[s][i] += 1
-    else:  
+    else:
         if rho is None:
             rho = 1./G.order()
-        Nk = np.array([Nk[k] for k in range(maxk+1)])       
+        Nk = np.array([Nk[k] for k in range(maxk+1)])
         for s in range(maxk+1):
             for i in range(maxk+1-s):
                 binomial_result = binom(s+i,i)
@@ -4187,14 +4187,14 @@ def SIS_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
                     S_si0[s,i] = 0
                     I_si0[s,i] = 0
 
-    return SIS_effective_degree(S_si0, I_si0, tau, gamma, tmin = tmin, 
-                                tmax=tmax, tcount=tcount, 
+    return SIS_effective_degree(S_si0, I_si0, tau, gamma, tmin = tmin,
+                                tmax=tmax, tcount=tcount,
                                 return_full_data=return_full_data)
 
-def SIR_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None, 
-                                    initial_recovereds = None, rho = None, 
-                                    tmin = 0, 
-                                    tmax=100, tcount=1001, 
+def SIR_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
+                                    initial_recovereds = None, rho = None,
+                                    tmin = 0,
+                                    tmax=100, tcount=1001,
                                     return_full_data=False):
     r'''Calls SIR_effective_degree after calculating S_si0, I0, R0 from the
     graph G and initial fraction infected rho
@@ -4266,7 +4266,7 @@ def SIR_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is not None and initial_recovereds is not None:
         raise EoN.EoNError("cannot define both initial_recovereds and rho")
-    
+
 
     Nk = Counter(dict(G.degree()).values())
     maxk = max(Nk.keys())
@@ -4285,13 +4285,13 @@ def SIR_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
                 I0 += 1
             else:
                 R0 += 1
-    else:  
+    else:
         if rho is None:
             rho = 1./G.order()
-        Nk = np.array([Nk[k] for k in range(maxk+1)])       
+        Nk = np.array([Nk[k] for k in range(maxk+1)])
         for s in range(maxk+1):
             for i in range(maxk+1-s):
-                binomial_result = binom(s+i,i) 
+                binomial_result = binom(s+i,i)
                 if binomial_result < float('Inf'):
                     S_si0[s,i] = (1-rho)*Nk[s+i] * binomial_result \
                                 * (rho**i) * (1-rho)**s
@@ -4305,8 +4305,8 @@ def SIR_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
         I0 = rho*sum(Nk)
         R0=0
 
-    return SIR_effective_degree(S_si0, I0, R0, tau, gamma, tmin=tmin, 
-                                tmax=tmax, tcount=tcount, 
+    return SIR_effective_degree(S_si0, I0, R0, tau, gamma, tmin=tmin,
+                                tmax=tmax, tcount=tcount,
                                 return_full_data=return_full_data)
 
 
@@ -4315,8 +4315,8 @@ def SIR_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
 #######     COMPACT EFFECTIVE DEGREE
 
 
-def SIS_compact_effective_degree(Sk0, Ik0, SI0, SS0, II0, tau, gamma, 
-                                    tmin = 0, tmax=100, tcount=1001, 
+def SIS_compact_effective_degree(Sk0, Ik0, SI0, SS0, II0, tau, gamma,
+                                    tmin = 0, tmax=100, tcount=1001,
                                     return_full_data=False):
     r'''
     Encodes system (5.44) of Kiss, Miller, & Simon.  Please cite the
@@ -4325,20 +4325,20 @@ def SIS_compact_effective_degree(Sk0, Ik0, SI0, SS0, II0, tau, gamma,
     This model is identical to the SIS compact pairwise model, so it 
     simply calls SIS_compact_pairwise()'''
 
-    return SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin, 
+    return SIS_compact_pairwise(Sk0, Ik0, SI0, SS0, II0, tau, gamma, tmin,
                                     tmax, tcount, return_full_data)
 
 def SIS_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds = None,
-                                            rho = None, 
-                                            tmin = 0, tmax=100, tcount=1001, 
+                                            rho = None,
+                                            tmin = 0, tmax=100, tcount=1001,
                                             return_full_data=False):
     r'''because the SIS compact effective degree model is identical to the
     compact pairwise model, simply calls SIS_compact_pairwise_from_graph'''
-                                            
-    return SIS_compact_pairwise_from_graph(G, tau, gamma, 
-                                            initial_infecteds = initial_infecteds, 
-                                            rho = rho, tmin = tmin, tmax=tmax, 
-                                            tcount=tcount, 
+
+    return SIS_compact_pairwise_from_graph(G, tau, gamma,
+                                            initial_infecteds = initial_infecteds,
+                                            rho = rho, tmin = tmin, tmax=tmax,
+                                            tcount=tcount,
                                             return_full_data=return_full_data)
 
 
@@ -4354,13 +4354,13 @@ def _dSIR_compact_effective_degree_(X, t, N, tau, gamma):
             + tau*(effectiveI-2*effectiveI**2)*sum(kappas*(kappas-1)*Skappa)
 
     dR = gamma*I
-    dX = np.concatenate((dSkappa, [dR, dSI]), axis=0) 
+    dX = np.concatenate((dSkappa, [dR, dSI]), axis=0)
     return dX
-    
-def SIR_compact_effective_degree(Skappa0, I0, R0, SI0, tau, gamma, tmin=0, 
-                                    tmax=100, tcount=1001, 
+
+def SIR_compact_effective_degree(Skappa0, I0, R0, SI0, tau, gamma, tmin=0,
+                                    tmax=100, tcount=1001,
                                     return_full_data=False):
-    '''
+    r'''
     Encodes system (5.43) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
@@ -4425,7 +4425,7 @@ def SIR_compact_effective_degree(Skappa0, I0, R0, SI0, tau, gamma, tmin=0,
     N = Skappa0.sum()+I0+R0
     X0= np.concatenate((Skappa0,[R0,SI0]), axis=0)
     times = np.linspace(tmin, tmax, tcount)
-    X = integrate.odeint(_dSIR_compact_effective_degree_, X0, times, 
+    X = integrate.odeint(_dSIR_compact_effective_degree_, X0, times,
                             args = (N, tau, gamma))
     Skappa = X.T[:-2]
     S = Skappa.sum(axis=0)
@@ -4436,9 +4436,9 @@ def SIR_compact_effective_degree(Skappa0, I0, R0, SI0, tau, gamma, tmin=0,
     else:
         return times, S, I, R
 
-def SIR_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None, 
-                                        initial_recovereds = None, rho = None, 
-                                            tmin = 0, tmax=100, tcount=1001, 
+def SIR_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds=None,
+                                        initial_recovereds = None, rho = None,
+                                            tmin = 0, tmax=100, tcount=1001,
                                             return_full_data=False):
     r'''Calls SIR_compact_effective_degree after calculating Skappa0, I0, R0, SI0
     from the graph G and initial fraction infected rho.
@@ -4500,8 +4500,8 @@ def SIR_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds=Non
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is not None and initial_recovereds is not None:
         raise EoN.EoNError("cannot define both initial_recovereds and rho")
-    
-    
+
+
     if initial_infecteds is not None:
         Nk = Counter(dict(G.degree()).values())
         maxk = max(Nk.keys())
@@ -4509,9 +4509,9 @@ def SIR_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds=Non
         I0=0
         R0=0
         SI0=0
-        status = _initialize_node_status_(G, initial_infecteds, 
+        status = _initialize_node_status_(G, initial_infecteds,
                                     initial_recovereds = initial_recovereds)
-                                    
+
         for node in G.nodes():
             if status[node] == 'S':
                 kappa = sum(1 for nbr in G.neighbors(node) if status[nbr] !='R')
@@ -4520,7 +4520,7 @@ def SIR_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds=Non
             elif status[node] == 'I':
                 I0 += 1
             else: #status[node]=='R'
-                R0 += 1            
+                R0 += 1
     else:
         if rho is None:
             rho = 1./G.order()
@@ -4531,8 +4531,8 @@ def SIR_compact_effective_degree_from_graph(G, tau, gamma, initial_infecteds=Non
         I0 = rho*sum(Nk)
         R0=0
         SI0 = sum([k*Skappa0[k]*rho for k in range(maxk+1)])
-    return SIR_compact_effective_degree(Skappa0, I0, R0, SI0, tau, gamma, 
-                                        tmin=tmin, tmax=tmax, tcount=tcount, 
+    return SIR_compact_effective_degree(Skappa0, I0, R0, SI0, tau, gamma,
+                                        tmin=tmin, tmax=tmax, tcount=tcount,
                                         return_full_data=return_full_data)
 
 
@@ -4567,7 +4567,7 @@ def Epi_Prob_discrete(Pk, p, number_its = 100):
     '''
     psi = get_PGF(Pk)
     psiPrime = get_PGFPrime(Pk)
-    
+
     alpha = 1-p
     k_ave = psiPrime(1.)
     for counter in range(number_its):
@@ -4575,7 +4575,7 @@ def Epi_Prob_discrete(Pk, p, number_its = 100):
     return 1- psi(alpha)
 
 
-def Epi_Prob_cts_time(Pk, tau, gamma, umin=0, umax = 10, ucount = 1001, 
+def Epi_Prob_cts_time(Pk, tau, gamma, umin=0, umax = 10, ucount = 1001,
                         number_its = 100):
     r'''Encodes System (6.3) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
@@ -4634,7 +4634,7 @@ def Epi_Prob_cts_time(Pk, tau, gamma, umin=0, umax = 10, ucount = 1001,
     psi = get_PGF(Pk)
     psiPrime = get_PGFPrime(Pk)
 
-    us = np.linspace(umin, umax, ucount) 
+    us = np.linspace(umin, umax, ucount)
     alpha = np.exp(-tau*us/gamma)  #initial guess for alpha(u)
     p = 1- np.exp(-tau*us/gamma)    #initial guess for p(u)
     exp_neg_u = np.exp(-us)        #e^{-u}
@@ -4672,19 +4672,19 @@ def Epi_Prob_non_Markovian(Pk, Pxidxi, po, number_its = 100):
     ks = np.arange(len(Pk))
     psi = get_PGF(Pk)
     psiPrime = get_PGFPrime(Pk)
-    
+
     xis = Pxidxi.keys()
     alpha = {xi: 1-po(xi) for xi in xis}
     for counter in range(number_its):
         newalpha = {}
         for xi in xis:
             newalpha[xi] = 1 - po(xi)  \
-                            + po(xi)*sum(psiPrime(alpha[xihat])*Pxidxi(xihat) 
+                            + po(xi)*sum(psiPrime(alpha[xihat])*Pxidxi(xihat)
                                                 for xihat in xis)/kave
         alpha = newalpha
     return 1 - sum(psi(alpha[xi])*Pxidxi[xi] for xi in xis)
 
-def Attack_rate_discrete(Pk, p, rho = None, Sk0=None, 
+def Attack_rate_discrete(Pk, p, rho = None, Sk0=None,
                             phiS0=None, phiR0=0, number_its=100):
     r'''
     Encodes systems (6.6) and (6.10) of Kiss, Miller, & Simon.  Please 
@@ -4748,24 +4748,24 @@ def Attack_rate_discrete(Pk, p, rho = None, Sk0=None,
         theta = 1-p + p*(phiR0 +  phiS0*psihatPrime(theta)/psihatPrime(1))
     return 1 - psihat(theta)
 
-def Attack_rate_discrete_from_graph(G, p, initial_infecteds=None, 
-                                        initial_recovereds = None, 
-                                        rho = None, number_its = 100 
+def Attack_rate_discrete_from_graph(G, p, initial_infecteds=None,
+                                        initial_recovereds = None,
+                                        rho = None, number_its = 100
                                     ):
     r''' if initial_infecteds and initial_recovereds is defined, then it
     will find Sk0, phiS0, and phiR0 and then call Attack_rate_discrete.  
     
     Otherwise it calls attack_rate_discrete with rho.
     '''
-    
+
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is not None and initial_recovereds is not None:
         raise EoN.EoNError("cannot define both initial_recovereds and rho")
-    
+
     Pk = get_Pk(G)
     if initial_infecteds is not None:
-        status = _initialize_node_status_(G, initial_infecteds, 
+        status = _initialize_node_status_(G, initial_infecteds,
                                     initial_recovereds = initial_recovereds)
         Nk = Counter(dict(G.degree()).values())
         maxk = max(Nk.keys())
@@ -4781,17 +4781,17 @@ def Attack_rate_discrete_from_graph(G, p, initial_infecteds=None,
                 SX += k
         phiS0 = SS*1./SX
         phiR0 = SR*1./SX
-        
+
     else:
         Sk0=None
         phiS0 = None
         phiR0 = 0
-        
-    
-    return Attack_rate_discrete(Pk, p, rho = rho, Sk0=Sk0, phiS0=PhiS0, 
+
+
+    return Attack_rate_discrete(Pk, p, rho = rho, Sk0=Sk0, phiS0=PhiS0,
                                 phiR0=phiR0, number_its = number_its)
 
-def Attack_rate_cts_time(Pk, tau, gamma, number_its =100, rho = None, 
+def Attack_rate_cts_time(Pk, tau, gamma, number_its =100, rho = None,
                             Sk0 = None, phiS0=None, phiR0=0):
     #tested in test_SIR_final_sizes
     '''Encodes system (6.7) of Kiss, Miller, & Simon.  Please cite the
@@ -4865,8 +4865,8 @@ def Attack_rate_cts_time(Pk, tau, gamma, number_its =100, rho = None,
                 + tau*phiR0/(gamma+tau)
     return 1 - psihat(omega)
 
-def Attack_rate_cts_time_from_graph(G,  tau, gamma, initial_infecteds=None, 
-                                        initial_recovereds = None, rho=None, 
+def Attack_rate_cts_time_from_graph(G,  tau, gamma, initial_infecteds=None,
+                                        initial_recovereds = None, rho=None,
                                         number_its =100):
     r'''
     Given a graph, predicts the attack rate for Configuration Model 
@@ -4884,10 +4884,10 @@ def Attack_rate_cts_time_from_graph(G,  tau, gamma, initial_infecteds=None,
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
     if rho is not None and initial_recovereds is not None:
         raise EoN.EoNError("cannot define both initial_recovereds and rho")
-    
+
     Pk = get_Pk(G)
     if initial_infecteds is not None:
-        status = _initialize_node_status_(G, initial_infecteds, 
+        status = _initialize_node_status_(G, initial_infecteds,
                                     initial_recovereds = initial_recovereds)
         Nk = Counter(dict(G.degree()).values())
         maxk = max(Nk.keys())
@@ -4910,7 +4910,7 @@ def Attack_rate_cts_time_from_graph(G,  tau, gamma, initial_infecteds=None,
 
     return Attack_rate_cts_time(Pk, tau, gamma, rho=rho, Sk0=Sk0, phiS0 = phiS0,
                                 phiR0=phiR0, number_its=number_its)
-    
+
 def Attack_rate_non_Markovian(Pk, Pzetadzeta, pi, number_its = 100):
     r'''
     Encodes system (6.8) of Kiss, Miller, & Simon.  Please cite the
@@ -5012,9 +5012,9 @@ def EBCM_discrete(N, psihat, psihatPrime, p, phiS0, phiR0=0, R0=0, tmin = 0, tma
         return np.array(times), np.array(S), np.array(I), \
                     np.array(R), np.array(theta)
 
-def EBCM_discrete_from_graph(G, p, initial_infecteds=None, 
-                                initial_recovereds = None, rho = None, 
-                                tmin = 0, tmax=100, 
+def EBCM_discrete_from_graph(G, p, initial_infecteds=None,
+                                initial_recovereds = None, rho = None,
+                                tmin = 0, tmax=100,
                                 return_full_data=False):
     #tested in test_basic_discrete_SIR
     '''
@@ -5069,7 +5069,7 @@ def EBCM_discrete_from_graph(G, p, initial_infecteds=None,
     N= G.order()
 
     if initial_infecteds is not None:
-        status = _initialize_node_status_(G, initial_infecteds, 
+        status = _initialize_node_status_(G, initial_infecteds,
                                     initial_recovereds = initial_recovereds)
         Nk = Counter(dict(G.degree()).values())
         maxk = max(Nk.keys())
@@ -5098,7 +5098,7 @@ def EBCM_discrete_from_graph(G, p, initial_infecteds=None,
         phiS0 = SS*1./SX
         phiR0 = SR*1./SX
         #print('here',Sk0, len(initial_infecteds)/sum(Nk))
-        
+
 
     else:
         if rho is None:
@@ -5111,14 +5111,14 @@ def EBCM_discrete_from_graph(G, p, initial_infecteds=None,
         phiR0 = 0
         R0 = 0
     #print(phiS0, phiR0, R0, psihat(1), psihatPrime(1))
-    return EBCM_discrete(N, psihat, psihatPrime, p, phiS0, phiR0=phiR0, R0=R0, 
-                        tmin = tmin, tmax = tmax, 
+    return EBCM_discrete(N, psihat, psihatPrime, p, phiS0, phiR0=phiR0, R0=R0,
+                        tmin = tmin, tmax = tmax,
                         return_full_data = return_full_data)
-                        
-def EBCM_discrete_uniform_introduction(N, psi, psiPrime, p, rho, tmax=100, 
+
+def EBCM_discrete_uniform_introduction(N, psi, psiPrime, p, rho, tmax=100,
                                         return_full_data=False):
     #tested in test_basic_discrete_SIR
-    '''
+    r'''
     Handles the case that the disease is introduced uniformly as opposed
     to depending on degree.
 
@@ -5152,8 +5152,8 @@ def EBCM_discrete_uniform_introduction(N, psi, psiPrime, p, rho, tmax=100,
         return (1-rho)*psi(x)
     def psihatPrime(x):
         return (1-rho)*psiPrime(x)
-    
-    return EBCM_discrete(N, psihat, psihatPrime, p, 1-rho, tmax=tmax, 
+
+    return EBCM_discrete(N, psihat, psihatPrime, p, 1-rho, tmax=tmax,
                             return_full_data=return_full_data)
 
 
@@ -5162,7 +5162,7 @@ def EBCM_discrete_uniform_introduction(N, psi, psiPrime, p, rho, tmax=100,
 def _dEBCM_(X, t, N, tau, gamma, psihat, psihatPrime, phiS0, phiR0):
     theta = X[0]
     R = X[1]
-    
+
     dtheta = -tau*theta + tau*phiS0*psihatPrime(theta)/psihatPrime(1) \
                 + gamma*(1-theta) + tau*phiR0
 
@@ -5170,10 +5170,10 @@ def _dEBCM_(X, t, N, tau, gamma, psihat, psihatPrime, phiS0, phiR0):
     I = N-S-R
     dR = gamma*I
     return np.array([dtheta, dR])
-    
-def EBCM(N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=0, R0=0, tmin=0, 
+
+def EBCM(N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=0, R0=0, tmin=0,
             tmax=100, tcount=1001, return_full_data=False):
-    '''
+    r'''
     Encodes system (6.12) of Kiss, Miller, & Simon.  Please cite the
     book if using this algorithm.
 
@@ -5223,8 +5223,8 @@ def EBCM(N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=0, R0=0, tmin=0,
     '''
     times = np.linspace(tmin, tmax, tcount)
     X0 = np.array([1, R0])
-    X = integrate.odeint(_dEBCM_, X0, times, 
-                            args = (N, tau, gamma, psihat, psihatPrime, phiS0, 
+    X = integrate.odeint(_dEBCM_, X0, times,
+                            args = (N, tau, gamma, psihat, psihatPrime, phiS0,
                                         phiR0))
     theta = X.T[0]
     R = X.T[1]
@@ -5236,8 +5236,8 @@ def EBCM(N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=0, R0=0, tmin=0,
         return times, S, I, R, theta
 
 
-def EBCM_from_graph(G, tau, gamma, initial_infecteds=None, 
-                    initial_recovereds = None, rho = None, tmin = 0, tmax=100, 
+def EBCM_from_graph(G, tau, gamma, initial_infecteds=None,
+                    initial_recovereds = None, rho = None, tmin = 0, tmax=100,
                     tcount=1001, return_full_data=False):
     r'''
     Given network G and rho, calculates N, psihat, psihatPrime, and calls EBCM.
@@ -5251,7 +5251,7 @@ def EBCM_from_graph(G, tau, gamma, initial_infecteds=None,
     N = G.order()
 
     if initial_infecteds is not None:
-        status = _initialize_node_status_(G, initial_infecteds, 
+        status = _initialize_node_status_(G, initial_infecteds,
                                     initial_recovereds = initial_recovereds)
         Nk = Counter(dict(G.degree()).values())
         maxk = max(Nk.keys())
@@ -5287,13 +5287,13 @@ def EBCM_from_graph(G, tau, gamma, initial_infecteds=None,
         phiS0 = 1-rho
         phiR0 = 0
         R0 = 0
-    return EBCM(N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=phiR0, R0=R0, 
+    return EBCM(N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=phiR0, R0=R0,
                         tmin = tmin, tmax = tmax, tcount=tcount,
                         return_full_data = return_full_data)
-                        
 
-def EBCM_uniform_introduction(N, psi, psiPrime, tau, gamma, rho, tmin=0, 
-                                tmax=100, tcount=1001, 
+
+def EBCM_uniform_introduction(N, psi, psiPrime, tau, gamma, rho, tmin=0,
+                                tmax=100, tcount=1001,
                                 return_full_data=False):
     r'''
     Handles the case that the disease is introduced uniformly as opposed
@@ -5336,11 +5336,11 @@ def EBCM_uniform_introduction(N, psi, psiPrime, tau, gamma, rho, tmin=0,
         return (1-rho)*psi(x)
     def psihatPrime(x):
         return (1-rho)*psiPrime(x)
-    
-    return EBCM(N, psihat, psihatPrime, tau, gamma, 1-rho, tmin=tmin, 
+
+    return EBCM(N, psihat, psihatPrime, tau, gamma, 1-rho, tmin=tmin,
                 tmax=tmax, tcount=tcount, return_full_data=return_full_data)
 
-    
+
 def _dEBCM_pref_mix_(X, t, rho, tau, gamma, Pk, Pnk):
     #print t
     R= X[0]
@@ -5364,7 +5364,7 @@ def _dEBCM_pref_mix_(X, t, rho, tau, gamma, Pk, Pnk):
         returnval.extend([dthetak_dt, dphiRk_dt])
     return np.array(returnval)
 
-#N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=0, R0=0, tmin=0, 
+#N, psihat, psihatPrime, tau, gamma, phiS0, phiR0=0, R0=0, tmin=0,
 #            tmax=100, tcount=1001, return_full_data=False
 def EBCM_pref_mix(N, Pk, Pnk, tau, gamma, rho = None, tmin = 0, tmax = 100, tcount = 1001, return_full_data=False):
     r'''
@@ -5410,7 +5410,7 @@ def EBCM_pref_mix(N, Pk, Pnk, tau, gamma, rho = None, tmin = 0, tmax = 100, tcou
     '''
     if rho is None:
         rho = 1./N
-        
+
     ts = np.linspace(tmin, tmax, tcount)
     IC = [0] #R(0)
     for k in sorted(Pk.keys()):
@@ -5423,7 +5423,7 @@ def EBCM_pref_mix(N, Pk, Pnk, tau, gamma, rho = None, tmin = 0, tmax = 100, tcou
     for index, k in enumerate(sorted(Pk.keys())):
         theta[k] = X.T[1+2*index]
         phiR[k] = X.T[1+2*index]
-    
+
     S = (1-rho)*sum([Pk[k]*theta[k]**k for k in Pk.keys()])
     I = 1-S-R
     if return_full_data:
@@ -5471,8 +5471,8 @@ def EBCM_pref_mix_from_graph(G, tau, gamma, rho = None, tmin = 0, tmax = 100, tc
     Pk = get_Pk(G)
     Pnk = get_Pnk(G)
     return EBCM_pref_mix(N, Pk, Pnk, tau, gamma, rho = rho, tmin = tmin, tmax = tmax, tcount = tcount, return_full_data=return_full_data)
-    
-    
+
+
 def EBCM_pref_mix_discrete(N, Pk, Pnk, p, rho = None, tmin = 0, tmax = 100, return_full_data=False):
     r'''
     
@@ -5516,7 +5516,7 @@ def EBCM_pref_mix_discrete(N, Pk, Pnk, p, rho = None, tmin = 0, tmax = 100, retu
     if rho is None:
         rho = 1./N
 
-    
+
     times = [0]
     theta = {k:[1] for k in Pk.keys()}
     R = [0]
@@ -5548,7 +5548,7 @@ def EBCM_pref_mix_discrete(N, Pk, Pnk, p, rho = None, tmin = 0, tmax = 100, retu
                     np.array(R)
 
 def EBCM_pref_mix_discrete_from_graph(G, p, rho = None, tmin = 0, tmax = 100, return_full_data=False):
-    
+
     '''
     Takes a given graph, finds degree correlations, and calls EBCM_pref_mix_discrete
     
@@ -5567,9 +5567,9 @@ def EBCM_pref_mix_discrete_from_graph(G, p, rho = None, tmin = 0, tmax = 100, re
         plt.legend(loc='upper right')
         plt.show()
     '''
-            
+
     N = G.order()
     Pk = get_Pk(G)
     Pnk = get_Pnk(G)
     return EBCM_pref_mix_discrete(N, Pk, Pnk, p, rho=rho, tmin=tmin, tmax=tmax, return_full_data=return_full_data)
-    
+

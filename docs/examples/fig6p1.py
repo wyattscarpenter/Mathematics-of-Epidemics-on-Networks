@@ -1,8 +1,7 @@
 import networkx as nx
 import EoN
-from collections import defaultdict
 import matplotlib.pyplot as plt
-import scipy 
+import scipy
 
 colors = ['#5AB3E6','#FF2000','#009A80','#E69A00', '#CD9AB3', '#0073B3','#F0E442']
 
@@ -57,16 +56,16 @@ for N, color, label in zip([100, 400, 1600, 6400, 25600], colors, labels):
 
     plt.figure(1)
     plt.loglog(m, freq, color = color)
-    
+
     plt.figure(2)
     plt.plot(m, freq, color=color)
     plt.yscale('log')
-    
+
     freq = scipy.array(freq)
     m= scipy.array(m)
     plt.figure(3)
     plt.plot(m/float(N), N*freq, color = color)  #float is required in case python 2.X
-    
+
     M1, Mstar, M2 = getMs(freq)
     plt.figure(4)
     plt.clf()
@@ -84,7 +83,7 @@ for N, color, label in zip([100, 400, 1600, 6400, 25600], colors, labels):
     plt.ylabel('Probability')
     plt.savefig('fig6p3{}.png'.format(label))
 
-    
+
 
 plt.figure(1)
 plt.ylabel(r'$\log_{10} x(m)$')
@@ -93,7 +92,7 @@ plt.savefig('fig6p1a.png')
 
 plt.figure(2)
 plt.xlabel('$m$')
-plt.ylabel('$\log_{10} x(m)$')
+plt.ylabel(r'$\log_{10} x(m)$')
 plt.axis(xmin = 0, xmax = 100)
 plt.savefig('fig6p1b.png')
 

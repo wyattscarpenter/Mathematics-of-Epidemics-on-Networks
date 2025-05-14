@@ -31,7 +31,7 @@ for edge in G.edges():
     G.edges[edge[0],edge[1]]['weight'] = G.degree(edge[0])*G.degree(edge[1])
     G.edges[edge[0],edge[1]]['inv_weight'] = 1./(G.degree(edge[0])*G.degree(edge[1]))
     #If networkx is older, use G.edge[edge[0]][edge[1]][...
-    
+
     weight_sum += G.degree(edge[0])*G.degree(edge[1])
     inv_weight_sum += 1./(G.degree(edge[0])*G.degree(edge[1]))
 

@@ -20,7 +20,7 @@ def rec_time_fxn(u, K, gamma):
     for counter in range(K):
         duration += random.expovariate(K*gamma)
     return duration
-    
+
 def trans_time_fxn(u, v, tau):
     return random.expovariate(tau)
 
@@ -28,9 +28,9 @@ display_ts = scipy.linspace(0, 50, 26)
 for G, filename in ([regular, 'fig9p2a.png'], [ER, 'fig9p2b.png']):
     plt.clf()
     Isum = scipy.zeros(len(display_ts))
-    for K, symbol in ([1, 's'], [3, 'd']):    
+    for K, symbol in ([1, 's'], [3, 'd']):
         for counter in range(iterations):
-            t, S, I, R = EoN.fast_nonMarkov_SIR(G, 
+            t, S, I, R = EoN.fast_nonMarkov_SIR(G,
                                                 trans_time_fxn=trans_time_fxn,
                                                 trans_time_args=(tau,),
                                                 rec_time_fxn=rec_time_fxn,
@@ -43,6 +43,5 @@ for G, filename in ([regular, 'fig9p2a.png'], [ER, 'fig9p2b.png']):
     plt.xlabel('$t$')
     plt.ylabel('Prevalence')
     plt.savefig(filename)
-        
-                                                
-            
+
+

@@ -1,6 +1,5 @@
 import networkx as nx
 import EoN
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import scipy
 import random
@@ -13,8 +12,8 @@ colors = ['#5AB3E6','#FF2000','#009A80','#E69A00', '#CD9AB3', '#0073B3','#F0E442
 print('setting up')
 G = nx.configuration_model([4]*N)
 
-chosen = random.sample(range(N),int(0.01*N)) 
-                            
+chosen = random.sample(range(N),int(0.01*N))
+
 initial_infecteds = set()
 
 for node in chosen:

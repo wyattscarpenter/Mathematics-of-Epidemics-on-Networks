@@ -27,18 +27,18 @@ for kave, ax in zip([50, 5], [ax1, ax2]):
         I = EoN.subsample(report_times, t, I)
         Isum += I
     ax.plot(report_times, Isum/iterations, color='grey', linewidth=5, alpha=0.3)
-    
+
     S0 = (1-rho)*N
     I0 = rho*N
-    
-    t, S, I = EoN.SIS_homogeneous_meanfield(S0, I0, kave, tau, gamma, tmin=0, tmax=tmax, 
+
+    t, S, I = EoN.SIS_homogeneous_meanfield(S0, I0, kave, tau, gamma, tmin=0, tmax=tmax,
                                 tcount=tcount)
     ax.plot(t, I/N, '--')
     S0 = (1-rho)*N
     I0 = rho*N
     SI0 = (1-rho)*N*kave*rho
     SS0 = (1-rho)*N*kave*(1-rho)
-    t, S, I = EoN.SIS_homogeneous_pairwise(S0, I0, SI0, SS0, kave, tau, gamma, tmin = 0, 
+    t, S, I = EoN.SIS_homogeneous_pairwise(S0, I0, SI0, SS0, kave, tau, gamma, tmin = 0,
                                 tmax=tmax, tcount=tcount)
     ax.plot(t, I/N)
 

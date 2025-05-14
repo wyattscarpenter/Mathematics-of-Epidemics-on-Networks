@@ -17,25 +17,25 @@ for node in G:
         G.node[node]['type'] = 'A'
     else:
         G.node[node]['type'] = 'B'
-        
+
 #We have defined the two types of nodes.
 
 #now define the transmission and recovery functions:
 def trans_time_function(source, target, tau):
-    if G.node[source]['type'] is 'A':
+    if G.node[source]['type'] == 'A':
         return random.expovariate(2*tau)
     else:
         return random.expovariate(tau)
-    
+
 def rec_time_function(node, gamma):
     return random.expovariate(gamma)
 
 tau = 0.4
 gamma = 1.
-sim = EoN.fast_nonMarkov_SIR(G, trans_time_function, rec_time_function, 
+sim = EoN.fast_nonMarkov_SIR(G, trans_time_function, rec_time_function,
                              trans_time_args=(tau,), rec_time_args=(gamma,),
                              rho = 0.01, return_full_data=True)
-                             
+
 t, S, I, R = sim.summary()
 plt.plot(t, I, label='Total Infecteds')
 
@@ -50,6 +50,5 @@ plt.xlabel('$t$')
 plt.ylabel('Infecteds')
 plt.savefig('bipartite.png')
 
-                             
 
-                                    
+

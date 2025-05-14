@@ -3,7 +3,7 @@ import EoN
 import numpy as np
 import random
 
-def subsample(report_times, times, status1, status2=None, 
+def subsample(report_times, times, status1, status2=None,
                 status3 = None):
     r'''
     Given a list/array of times to report at, returns the number of nodes of 
@@ -104,7 +104,7 @@ def subsample(report_times, times, status1, status2=None,
     '''
     if report_times[0] < times[0]:
         raise EoN.EoNError("report_times[0]<times[0]")
-        
+
     report_status1 = []
     next_report_index = 0
     next_observation_index = 0
@@ -115,9 +115,9 @@ def subsample(report_times, times, status1, status2=None,
             next_observation_index += 1
         report_status1.append(candidate)
         next_report_index +=1
-        
+
     report_status1= np.array(report_status1)
-    
+
     if status2 is not None:
         if status3 is not None:
             report_status2, report_status3 = subsample(report_times, times, status2, status3)
@@ -183,7 +183,7 @@ def get_time_shift(times, L, threshold):
             plt.plot(t-tshift, I, color = 'red', linewidth = 1, alpha = 0.4)
         plt.savefig("timeshift_demonstration.pdf")
     '''
-    
+
     for index, t in enumerate(times):
         if L[index]>= threshold:
             break
@@ -247,8 +247,8 @@ def hierarchy_pos(G, root=None, width=1., vert_gap = 0.2, vert_loc = 0, leaf_vs_
         else:
             root = random.choice(list(G.nodes))
 
-    def _hierarchy_pos(G, root, leftmost, width, leafdx = 0.2, vert_gap = 0.2, vert_loc = 0, 
-                    xcenter = 0.5, rootpos = None, 
+    def _hierarchy_pos(G, root, leftmost, width, leafdx = 0.2, vert_gap = 0.2, vert_loc = 0,
+                    xcenter = 0.5, rootpos = None,
                     leafpos = None, parent = None):
         '''
         see hierarchy_pos docstring for most arguments
@@ -267,15 +267,15 @@ def hierarchy_pos(G, root=None, width=1., vert_gap = 0.2, vert_loc = 0, leaf_vs_
         children = list(G.neighbors(root))
         leaf_count = 0
         if not isinstance(G, nx.DiGraph) and parent is not None:
-            children.remove(parent)  
+            children.remove(parent)
         if len(children)!=0:
             rootdx = width/len(children)
             nextx = xcenter - width/2 - rootdx/2
             for child in children:
                 nextx += rootdx
-                rootpos, leafpos, newleaves = _hierarchy_pos(G,child, leftmost+leaf_count*leafdx, 
+                rootpos, leafpos, newleaves = _hierarchy_pos(G,child, leftmost+leaf_count*leafdx,
                                     width=rootdx, leafdx=leafdx,
-                                    vert_gap = vert_gap, vert_loc = vert_loc-vert_gap, 
+                                    vert_gap = vert_gap, vert_loc = vert_loc-vert_gap,
                                     xcenter=nextx, rootpos=rootpos, leafpos=leafpos, parent = root)
                 leaf_count += newleaves
 
@@ -294,14 +294,14 @@ def hierarchy_pos(G, root=None, width=1., vert_gap = 0.2, vert_loc = 0, leaf_vs_
         leafcount = len([node for node in nx.descendants(G, root) if G.out_degree(node)==0])
     elif isinstance(G, nx.Graph):
         leafcount = len([node for node in nx.node_connected_component(G, root) if G.degree(node)==1 and node != root])
-    rootpos, leafpos, leaf_count = _hierarchy_pos(G, root, 0, width, 
-                                                    leafdx=width*1./leafcount, 
-                                                    vert_gap=vert_gap, 
-                                                    vert_loc = vert_loc, 
+    rootpos, leafpos, leaf_count = _hierarchy_pos(G, root, 0, width,
+                                                    leafdx=width*1./leafcount,
+                                                    vert_gap=vert_gap,
+                                                    vert_loc = vert_loc,
                                                     xcenter = xcenter)
     pos = {}
     for node in rootpos:
-        pos[node] = (leaf_vs_root_factor*leafpos[node][0] + (1-leaf_vs_root_factor)*rootpos[node][0], leafpos[node][1]) 
+        pos[node] = (leaf_vs_root_factor*leafpos[node][0] + (1-leaf_vs_root_factor)*rootpos[node][0], leafpos[node][1])
 #    pos = {node:(leaf_vs_root_factor*x1+(1-leaf_vs_root_factor)*x2, y1) for ((x1,y1), (x2,y2)) in (leafpos[node], rootpos[node]) for node in rootpos}
     xmax = max(x for x,y in pos.values())
     for node in pos:

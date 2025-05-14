@@ -43,7 +43,7 @@ def generate_network(Pk, N, ntries = 100):
         raise EoN.EoNError("cannot generate even degree sum")
     G = nx.configuration_model(ks)
     return G
- 
+
 
 
 #An erdos-renyi network has a Poisson degree distribution.
@@ -53,9 +53,9 @@ def PsiPoisson(x):
     return scipy.exp(-target_k*(1-x))
 def DPsiPoisson(x):
     return target_k*scipy.exp(-target_k*(1-x))
-    
-    
-    
+
+
+
 #a regular (homogeneous) network has a simple generating function.
 
 def PkHomogeneous():
@@ -73,7 +73,7 @@ def DPsiHomogeneous(x):
 
 #defining the power law degree distribution here:
 assert(target_k==6) #if you've changed target_k, then you'll
-                   #want to update the range 1..61 and/or 
+                   #want to update the range 1..61 and/or
                    #the exponent 1.5.
 
 PlPk = {}
@@ -82,12 +82,12 @@ kave = 0
 for k in range(1,61):
     PlPk[k]=k**(-exponent)
     kave += k*PlPk[k]
-   
+
 normfactor= sum(PlPk.values())
 for k in PlPk:
     PlPk[k] /= normfactor
 
-def PkPowLaw(): 
+def PkPowLaw():
     r = random.random()
     for k in PlPk:
         r -= PlPk[k]
@@ -106,11 +106,11 @@ def DPsiPowLaw(x):
     for k in PlPk:
         rval += k*PlPk[k]*x**(k-1)
     return rval
-#End of power law network properties.   
- 
- 
- 
- 
+#End of power law network properties.
+
+
+
+
 
 def process_degree_distribution(N, Pk, color, Psi, DPsi, symbol, label, count):
     report_times = scipy.linspace(0,30,3000)
@@ -118,14 +118,14 @@ def process_degree_distribution(N, Pk, color, Psi, DPsi, symbol, label, count):
     for cnt in range(count):
         G = generate_network(Pk, N)
         t, S, I, R = EoN.fast_SIR(G, tau, gamma, rho=rho)
-        plt.plot(t, I*1./N, '-', color = color, 
+        plt.plot(t, I*1./N, '-', color = color,
                                 alpha = 0.1, linewidth=1)
         subsampled_I = EoN.subsample(report_times, t, I)
         sums += subsampled_I*1./N
     ave = sums/count
     plt.plot(report_times, ave, color = 'k')
-    
-    #Do EBCM    
+
+    #Do EBCM
     N= G.order()#N is arbitrary, but included because our implementation of EBCM assumes N is given.
     t, S, I, R = EoN.EBCM_uniform_introduction(N, Psi, DPsi, tau, gamma, rho, tmin=0, tmax=10, tcount = 41)
     plt.plot(t, I/N, symbol, color = color, markeredgecolor='k', label=label)
@@ -139,8 +139,8 @@ def process_degree_distribution(N, Pk, color, Psi, DPsi, symbol, label, count):
 
 
 plt.figure(figsize=(8,4))
-    
-    
+
+
 
 #Powerlaw
 process_degree_distribution(N, PkPowLaw, colors[3], PsiPowLaw, DPsiPowLaw, 'd', r'Truncated Power Law', count)

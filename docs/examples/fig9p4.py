@@ -23,7 +23,7 @@ rho = 0.001
 
 def rec_time_fxn(u):
     return 1
-    
+
 def trans_time_fxn(u, v, tau):
     return random.expovariate(tau)
 
@@ -31,14 +31,14 @@ def ER_graph_generation(N, kave):
     return nx.fast_gnp_random_graph(N, kave/(N-1.))
 def regular_graph_generation(N, kave):
     return nx.configuration_model([kave]*N)
-    
+
 display_ts = scipy.linspace(0, 8, 41) #[0, 0.2, 0.4, ..., 7.8, 8]
 for graph_algorithm, filename in ([regular_graph_generation, 'fig9p4a.png'], [ER_graph_generation, 'fig9p4b.png']):
     plt.clf()
     for kave, symbol in ([5, 'o'], [10, 's'], [15, 'd']):
         print(kave)
-        G = graph_algorithm(N, kave)    
-        t, S, I, R = EoN.fast_nonMarkov_SIR(G, 
+        G = graph_algorithm(N, kave)
+        t, S, I, R = EoN.fast_nonMarkov_SIR(G,
                                                 trans_time_fxn=trans_time_fxn,
                                                 trans_time_args=(tau,),
                                                 rec_time_fxn=rec_time_fxn,
@@ -49,6 +49,5 @@ for graph_algorithm, filename in ([regular_graph_generation, 'fig9p4a.png'], [ER
     plt.xlabel('$t$')
     plt.ylabel('Prevalence')
     plt.savefig(filename)
-        
-                                                
-            
+
+

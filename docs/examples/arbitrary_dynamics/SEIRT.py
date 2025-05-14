@@ -2,7 +2,6 @@ import EoN
 import networkx as nx
 from collections import defaultdict
 import matplotlib.pyplot as plt
-import random
 
 N = 100000
 G = nx.fast_gnp_random_graph(N, 5./(N-1))
